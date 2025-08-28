@@ -52,6 +52,12 @@ export default {
 					DEFAULT: 'hsl(var(--card))',
 					foreground: 'hsl(var(--card-foreground))'
 				},
+				neon: {
+					purple: 'hsl(var(--neon-purple))',
+					pink: 'hsl(var(--neon-pink))',
+					cyan: 'hsl(var(--neon-cyan))',
+					green: 'hsl(var(--neon-green))'
+				},
 				sidebar: {
 					DEFAULT: 'hsl(var(--sidebar-background))',
 					foreground: 'hsl(var(--sidebar-foreground))',
@@ -63,10 +69,18 @@ export default {
 					ring: 'hsl(var(--sidebar-ring))'
 				}
 			},
-			borderRadius: {
-				lg: 'var(--radius)',
-				md: 'calc(var(--radius) - 2px)',
-				sm: 'calc(var(--radius) - 4px)'
+			backgroundImage: {
+				'gradient-primary': 'var(--gradient-primary)',
+				'gradient-secondary': 'var(--gradient-secondary)', 
+				'gradient-accent': 'var(--gradient-accent)'
+			},
+			boxShadow: {
+				'neon': 'var(--shadow-neon)',
+				'glow': 'var(--shadow-glow)'
+			},
+			transitionTimingFunction: {
+				'smooth': 'var(--transition-smooth)',
+				'bounce': 'var(--transition-bounce)'
 			},
 			keyframes: {
 				'accordion-down': {
@@ -84,11 +98,40 @@ export default {
 					to: {
 						height: '0'
 					}
+				},
+				'pulse-neon': {
+					'0%, 100%': {
+						boxShadow: '0 0 20px hsl(var(--neon-purple) / 0.3)'
+					},
+					'50%': {
+						boxShadow: '0 0 40px hsl(var(--neon-purple) / 0.6), 0 0 60px hsl(var(--neon-pink) / 0.3)'
+					}
+				},
+				'float': {
+					'0%, 100%': {
+						transform: 'translateY(0px)'
+					},
+					'50%': {
+						transform: 'translateY(-10px)'
+					}
+				},
+				'glow-rotate': {
+					'0%': {
+						transform: 'rotate(0deg)',
+						filter: 'hue-rotate(0deg)'
+					},
+					'100%': {
+						transform: 'rotate(360deg)',
+						filter: 'hue-rotate(360deg)'
+					}
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'pulse-neon': 'pulse-neon 2s ease-in-out infinite',
+				'float': 'float 3s ease-in-out infinite',
+				'glow-rotate': 'glow-rotate 8s linear infinite'
 			}
 		}
 	},
