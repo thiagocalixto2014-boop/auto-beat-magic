@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Sparkles, Plus, ChevronDown, Image } from "lucide-react";
 import { FloatingCard } from "./floating-card";
