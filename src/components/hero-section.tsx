@@ -3,81 +3,119 @@ import { Sparkles, Plus, ChevronDown, Image } from "lucide-react";
 import { FloatingCard } from "./floating-card";
 import { Navbar } from "./navbar";
 
+// Floating particles component
+const Particles = () => {
+  return (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      {Array.from({ length: 20 }).map((_, i) => (
+        <div
+          key={i}
+          className="absolute w-1 h-1 bg-purple-light/30 rounded-full animate-particle-float"
+          style={{
+            left: `${Math.random() * 100}%`,
+            animationDelay: `${Math.random() * 15}s`,
+            animationDuration: `${15 + Math.random() * 10}s`
+          }}
+        />
+      ))}
+    </div>
+  );
+};
+
 export const HeroSection = () => {
   return (
-    <section className="min-h-screen relative overflow-hidden">
-      {/* Warm Gradient Background */}
+    <section className="min-h-screen relative overflow-hidden bg-gradient-dark">
+      {/* Animated Purple Gradient Background */}
       <div className="absolute inset-0">
+        {/* Main purple glow - top */}
         <div 
-          className="absolute inset-0"
+          className="absolute -top-40 left-1/2 -translate-x-1/2 w-[1000px] h-[600px] rounded-full animate-pulse-glow blur-3xl"
           style={{
-            background: 'linear-gradient(180deg, hsl(30 85% 45% / 0.35) 0%, hsl(25 80% 35% / 0.15) 35%, hsl(20 15% 6%) 65%)'
+            background: 'radial-gradient(ellipse at center, hsl(270 70% 40% / 0.5) 0%, hsl(280 60% 30% / 0.2) 50%, transparent 70%)'
           }}
         />
-        {/* Purple accent glow */}
+        
+        {/* Secondary glow - left */}
         <div 
-          className="absolute top-0 left-1/4 w-[600px] h-[400px] rounded-full blur-3xl"
+          className="absolute top-1/4 -left-40 w-[500px] h-[500px] rounded-full animate-drift blur-3xl"
           style={{
-            background: 'radial-gradient(ellipse at center, hsl(280 70% 50% / 0.15) 0%, transparent 70%)'
+            background: 'radial-gradient(ellipse at center, hsl(285 70% 35% / 0.3) 0%, transparent 60%)'
           }}
         />
-        {/* Warm accent on right */}
+
+        {/* Tertiary glow - right */}
         <div 
-          className="absolute top-10 right-0 w-[500px] h-[400px] rounded-full blur-3xl"
+          className="absolute top-1/3 -right-40 w-[600px] h-[500px] rounded-full animate-drift blur-3xl"
           style={{
-            background: 'radial-gradient(ellipse at center, hsl(35 90% 50% / 0.2) 0%, transparent 70%)'
+            animationDelay: '-10s',
+            background: 'radial-gradient(ellipse at center, hsl(310 60% 35% / 0.25) 0%, transparent 60%)'
+          }}
+        />
+
+        {/* Deep bottom glow */}
+        <div 
+          className="absolute bottom-0 left-1/2 -translate-x-1/2 w-full h-[400px] animate-pulse-glow"
+          style={{
+            animationDelay: '-2s',
+            background: 'radial-gradient(ellipse at bottom, hsl(265 80% 20% / 0.3) 0%, transparent 60%)'
           }}
         />
       </div>
 
+      <Particles />
       <Navbar />
 
       {/* Floating Cards - Left */}
-      <div className="absolute left-0 top-1/2 -translate-y-1/2 hidden lg:block">
-        <div className="relative">
-          <FloatingCard 
-            title="Viral Montage"
-            creator="Creator X"
-            className="animate-float -rotate-6 -translate-x-12"
-            gradient="bg-gradient-to-br from-brand-violet/40 via-brand-purple/30 to-background"
-          />
-        </div>
+      <div className="absolute left-0 top-1/2 -translate-y-1/2 hidden lg:block z-10">
+        <FloatingCard 
+          title="Viral Montage"
+          creator="Creator X"
+          className="animate-float -translate-x-16"
+          gradient="bg-gradient-to-br from-purple-main/50 via-violet/30 to-background/80"
+        />
       </div>
 
       {/* Floating Cards - Right */}
-      <div className="absolute right-0 top-1/2 -translate-y-1/2 hidden lg:block">
-        <div className="relative">
-          <FloatingCard 
-            title="Beat Sync Edit"
-            creator="EditMaster"
-            className="animate-float-reverse rotate-6 translate-x-12"
-            gradient="bg-gradient-to-br from-brand-amber/30 via-brand-orange/20 to-background"
-          />
-        </div>
+      <div className="absolute right-0 top-1/2 -translate-y-1/2 hidden lg:block z-10">
+        <FloatingCard 
+          title="Beat Sync Edit"
+          creator="EditMaster"
+          className="animate-float-reverse translate-x-16"
+          gradient="bg-gradient-to-br from-magenta/40 via-purple-glow/30 to-background/80"
+        />
       </div>
 
       {/* Main Content */}
       <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-4 pt-20">
         <div className="max-w-4xl mx-auto text-center space-y-8">
-          {/* Headline with typing effect */}
-          <h1 className="text-5xl sm:text-6xl lg:text-7xl font-medium tracking-tight leading-[1.1]">
+          {/* Headline */}
+          <h1 
+            className="text-5xl sm:text-6xl lg:text-7xl font-medium tracking-tight leading-[1.1] opacity-0 animate-fade-up"
+            style={{ animationDelay: '0.1s' }}
+          >
             <span className="text-foreground">Make a </span>
             <span className="text-foreground">viral edit about</span>
             <br />
-            <span className="text-foreground relative">
+            <span className="bg-gradient-purple bg-clip-text text-transparent bg-[length:200%_200%] animate-gradient-shift">
               your best moments
-              <span className="animate-blink">|</span>
             </span>
+            <span className="text-purple-light animate-blink">|</span>
           </h1>
 
           {/* Subtitle */}
-          <p className="text-lg sm:text-xl text-muted-foreground max-w-xl mx-auto">
+          <p 
+            className="text-lg sm:text-xl text-muted-foreground max-w-xl mx-auto opacity-0 animate-fade-up"
+            style={{ animationDelay: '0.3s' }}
+          >
             Start with your clips or dive into our pro editing tools, your next viral video is just a step away.
           </p>
 
           {/* Prompt Input Box */}
-          <div className="max-w-2xl mx-auto mt-8">
-            <div className="relative bg-secondary/80 backdrop-blur-sm rounded-2xl border border-border p-4">
+          <div 
+            className="max-w-2xl mx-auto mt-8 opacity-0 animate-fade-up"
+            style={{ animationDelay: '0.5s' }}
+          >
+            <div className="relative bg-secondary/60 backdrop-blur-xl rounded-2xl border border-purple-main/20 p-4 shadow-purple transition-all hover:border-purple-main/40 hover:shadow-glow">
               <div className="flex items-start gap-3">
                 <input
                   type="text"
@@ -87,14 +125,14 @@ export const HeroSection = () => {
               </div>
               <div className="flex items-center justify-between mt-3 pt-3 border-t border-border/50">
                 <div className="flex items-center gap-2">
-                  <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:text-foreground">
+                  <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:text-purple-light hover:bg-purple-main/10">
                     <Plus className="w-5 h-5" />
                   </Button>
-                  <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:text-foreground">
+                  <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:text-purple-light hover:bg-purple-main/10">
                     <Image className="w-5 h-5" />
                   </Button>
                 </div>
-                <Button className="bg-gradient-purple hover:opacity-90 text-primary-foreground rounded-full px-6 gap-2">
+                <Button className="bg-gradient-purple hover:opacity-90 text-primary-foreground rounded-full px-6 gap-2 shadow-purple transition-all hover:shadow-glow">
                   <Sparkles className="w-4 h-4" />
                   Create
                 </Button>
@@ -103,10 +141,13 @@ export const HeroSection = () => {
           </div>
 
           {/* Explore Button */}
-          <div className="pt-4">
+          <div 
+            className="pt-4 opacity-0 animate-fade-up"
+            style={{ animationDelay: '0.7s' }}
+          >
             <Button 
               variant="outline" 
-              className="rounded-full border-border text-foreground hover:bg-secondary/50 gap-2"
+              className="rounded-full border-purple-main/30 text-foreground hover:bg-purple-main/10 hover:border-purple-main/50 gap-2 transition-all"
             >
               Explore Advanced Features
               <ChevronDown className="w-4 h-4" />
@@ -115,19 +156,22 @@ export const HeroSection = () => {
         </div>
 
         {/* Press Logos */}
-        <div className="absolute bottom-12 left-0 right-0">
-          <div className="flex items-center justify-center gap-12 text-muted-foreground/40 text-sm font-medium tracking-widest">
-            <span>TECHCRUNCH</span>
-            <span>WIRED</span>
-            <span>THE VERGE</span>
-            <span>VARIETY</span>
-            <span>BILLBOARD</span>
+        <div 
+          className="absolute bottom-12 left-0 right-0 opacity-0 animate-fade-up"
+          style={{ animationDelay: '0.9s' }}
+        >
+          <div className="flex items-center justify-center gap-12 text-muted-foreground/30 text-sm font-medium tracking-widest">
+            <span className="hover:text-purple-light/50 transition-colors cursor-default">TECHCRUNCH</span>
+            <span className="hover:text-purple-light/50 transition-colors cursor-default">WIRED</span>
+            <span className="hover:text-purple-light/50 transition-colors cursor-default">THE VERGE</span>
+            <span className="hover:text-purple-light/50 transition-colors cursor-default">VARIETY</span>
+            <span className="hover:text-purple-light/50 transition-colors cursor-default">BILLBOARD</span>
           </div>
         </div>
       </div>
 
-      {/* Bottom fade */}
-      <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-background to-transparent pointer-events-none" />
+      {/* Bottom gradient fade */}
+      <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-background via-background/80 to-transparent pointer-events-none" />
     </section>
   );
 };
