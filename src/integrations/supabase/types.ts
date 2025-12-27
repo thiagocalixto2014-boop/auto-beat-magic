@@ -14,7 +14,89 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          email: string | null
+          full_name: string | null
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id: string
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      projects: {
+        Row: {
+          beat_data: Json | null
+          clips_urls: string[] | null
+          created_at: string
+          effects: string[]
+          id: string
+          music_duration: number | null
+          music_url: string | null
+          output_url: string | null
+          status: string
+          template: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          beat_data?: Json | null
+          clips_urls?: string[] | null
+          created_at?: string
+          effects?: string[]
+          id?: string
+          music_duration?: number | null
+          music_url?: string | null
+          output_url?: string | null
+          status?: string
+          template?: string
+          title?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          beat_data?: Json | null
+          clips_urls?: string[] | null
+          created_at?: string
+          effects?: string[]
+          id?: string
+          music_duration?: number | null
+          music_url?: string | null
+          output_url?: string | null
+          status?: string
+          template?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "projects_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
