@@ -155,19 +155,6 @@ export const HeroSection = () => {
           </div>
         </div>
 
-        {/* Press Logos */}
-        <div 
-          className="absolute bottom-12 left-0 right-0 opacity-0 animate-fade-up"
-          style={{ animationDelay: '0.9s' }}
-        >
-          <div className="flex items-center justify-center gap-12 text-muted-foreground/30 text-sm font-medium tracking-widest">
-            <span className="hover:text-purple-light/50 transition-colors cursor-default">TECHCRUNCH</span>
-            <span className="hover:text-purple-light/50 transition-colors cursor-default">WIRED</span>
-            <span className="hover:text-purple-light/50 transition-colors cursor-default">THE VERGE</span>
-            <span className="hover:text-purple-light/50 transition-colors cursor-default">VARIETY</span>
-            <span className="hover:text-purple-light/50 transition-colors cursor-default">BILLBOARD</span>
-          </div>
-        </div>
       </div>
 
       {/* Bottom gradient fade */}
