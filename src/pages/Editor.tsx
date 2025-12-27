@@ -17,6 +17,7 @@ interface Project {
   template: string;
   effects: string[];
   music_url: string | null;
+  music_duration: number | null;
   clips_urls: string[] | null;
   output_url: string | null;
   beat_data: any;
