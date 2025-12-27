@@ -1,7 +1,7 @@
 project_id = "ffzrezqwdlafysmhlzwq"
 
 [functions.analyze-beats]
-verify_jwt = true
+verify_jwt = false
 
 [functions.apply-video-effects]
 verify_jwt = false
