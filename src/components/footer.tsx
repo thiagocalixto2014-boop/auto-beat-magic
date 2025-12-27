@@ -8,8 +8,8 @@ export const Footer = () => {
         <div className="grid md:grid-cols-5 gap-12">
           {/* Brand */}
           <div className="md:col-span-2 space-y-4">
-            <h3 className="text-2xl font-bold">
-              EditLabs
+            <h3 className="text-xl font-bold tracking-tight">
+              EDITLABS
             </h3>
             <p className="text-sm text-muted-foreground max-w-xs">
               Turn your clips into stunning TikTok-style edits automatically with AI. No editing skills required.

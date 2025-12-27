@@ -33,7 +33,7 @@ export const WorkflowSection = () => {
     <section className="py-24 relative">
       <div className="container mx-auto px-4">
         <div className="text-center mb-20">
-          <h2 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight mb-6">
+          <h2 className="text-4xl sm:text-5xl lg:text-6xl font-medium tracking-tight mb-6">
             How it works
           </h2>
           <p className="text-xl text-muted-foreground max-w-xl mx-auto">
@@ -45,17 +45,16 @@ export const WorkflowSection = () => {
           {steps.map((step, index) => (
             <Card 
               key={index} 
-              className="relative p-8 bg-card/50 backdrop-blur-sm border-border hover:border-muted-foreground/30 transition-all duration-300 group"
-              style={{ animationDelay: `${index * 0.1}s` }}
+              className="relative p-8 bg-card/50 backdrop-blur-sm border-border hover:border-brand-purple/30 transition-all duration-300 group"
             >
               {/* Step Number */}
-              <div className="text-6xl font-black text-muted/30 absolute top-4 right-4">
+              <div className="text-6xl font-black text-muted/20 absolute top-4 right-4">
                 {step.step}
               </div>
 
               {/* Icon */}
-              <div className="w-14 h-14 rounded-2xl bg-secondary flex items-center justify-center mb-6 group-hover:bg-aura-purple/10 transition-colors">
-                <step.icon className="w-7 h-7 text-aura-purple" />
+              <div className="w-14 h-14 rounded-2xl bg-secondary flex items-center justify-center mb-6 group-hover:bg-brand-purple/10 transition-colors">
+                <step.icon className="w-7 h-7 text-brand-purple" />
               </div>
 
               {/* Content */}

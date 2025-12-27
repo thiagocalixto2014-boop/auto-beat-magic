@@ -9,7 +9,7 @@ const templates = [
     name: 'Flashy',
     description: 'High-energy cuts with flashes and beat drops',
     icon: Sparkles,
-    gradient: 'from-aura-purple/20 to-aura-pink/10',
+    gradient: 'from-brand-purple/30 to-brand-violet/10',
     effects: ['Flash Effects', 'Beat Drops', 'Quick Cuts'],
     popular: true
   },
@@ -18,7 +18,7 @@ const templates = [
     name: 'Smooth Zoom',
     description: 'Cinematic zooms and smooth transitions',
     icon: Zap,
-    gradient: 'from-aura-pink/20 to-aura-blue/10',
+    gradient: 'from-brand-violet/30 to-brand-magenta/10',
     effects: ['Zoom Effects', 'Smooth Transitions', 'Slow Motion'],
     popular: true
   },
@@ -27,7 +27,7 @@ const templates = [
     name: 'AMV Style',
     description: 'Anime music video style with dynamic effects',
     icon: Waves,
-    gradient: 'from-aura-blue/20 to-aura-teal/10',
+    gradient: 'from-brand-orange/20 to-brand-amber/10',
     effects: ['Dynamic Cuts', 'Color Grading', 'Text Effects'],
     popular: false
   },
@@ -36,7 +36,7 @@ const templates = [
     name: 'Minimal',
     description: 'Clean cuts with subtle transitions',
     icon: Minus,
-    gradient: 'from-aura-teal/20 to-aura-purple/10',
+    gradient: 'from-brand-amber/20 to-brand-purple/10',
     effects: ['Clean Cuts', 'Subtle Effects', 'Simple Flow'],
     popular: false
   }
@@ -44,10 +44,10 @@ const templates = [
 
 export const TemplatesSection = () => {
   return (
-    <section className="py-24 bg-secondary/30">
+    <section className="py-24 bg-secondary/20">
       <div className="container mx-auto px-4">
         <div className="text-center mb-20">
-          <h2 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight mb-6">
+          <h2 className="text-4xl sm:text-5xl lg:text-6xl font-medium tracking-tight mb-6">
             Choose your style
           </h2>
           <p className="text-xl text-muted-foreground max-w-xl mx-auto">
@@ -59,10 +59,10 @@ export const TemplatesSection = () => {
           {templates.map((template) => (
             <Card 
               key={template.id} 
-              className="relative group cursor-pointer overflow-hidden border-border hover:border-muted-foreground/30 transition-all duration-300"
+              className="relative group cursor-pointer overflow-hidden border-border hover:border-brand-purple/30 transition-all duration-300"
             >
               {template.popular && (
-                <Badge className="absolute top-4 right-4 z-10 bg-aura-purple text-primary-foreground border-0">
+                <Badge className="absolute top-4 right-4 z-10 bg-brand-purple text-primary-foreground border-0">
                   Popular
                 </Badge>
               )}
@@ -98,7 +98,7 @@ export const TemplatesSection = () => {
               {/* Info */}
               <div className="p-6">
                 <div className="flex items-center gap-3 mb-3">
-                  <template.icon className="w-5 h-5 text-aura-purple" />
+                  <template.icon className="w-5 h-5 text-brand-purple" />
                   <h3 className="text-lg font-semibold">{template.name}</h3>
                 </div>
                 
