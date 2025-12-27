@@ -24,8 +24,10 @@ const templates = [
 ];
 
 const effects = [
+  { id: "shake", name: "Shake", icon: Move, description: "Standard camera shake effect" },
+  { id: "shake-light", name: "Light Shake", icon: Move, description: "Subtle camera shake" },
+  { id: "shake-heavy", name: "Heavy Shake", icon: Move, description: "Intense camera shake" },
   { id: "zoom", name: "Zoom", icon: ZoomIn, description: "Dynamic zoom in/out on beats" },
-  { id: "shake", name: "Shake", icon: Move, description: "Camera shake effect" },
   { id: "reverse", name: "Reverse", icon: RotateCcw, description: "Reverse clip segments" },
 ];
 
