@@ -2,111 +2,99 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Editfy Design System - Video Editing Platform 
-All colors MUST be HSL for the dark, neon-themed video editor
+/* EditLabs Design System - Suno-inspired Aesthetic
+   Clean, atmospheric, bold typography with soft glowing auras
+   All colors MUST be HSL
 */
 
 @layer base {
   :root {
-    --background: 220 26% 8%;
-    --foreground: 220 8% 95%;
+    --background: 240 10% 4%;
+    --foreground: 0 0% 98%;
 
-    --card: 220 26% 10%;
-    --card-foreground: 220 8% 95%;
+    --card: 240 10% 6%;
+    --card-foreground: 0 0% 98%;
 
-    --popover: 220 26% 10%;
-    --popover-foreground: 220 8% 95%;
+    --popover: 240 10% 6%;
+    --popover-foreground: 0 0% 98%;
 
-    --primary: 280 100% 70%;
-    --primary-foreground: 220 26% 8%;
+    --primary: 262 83% 58%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 220 20% 14%;
-    --secondary-foreground: 220 8% 80%;
+    --secondary: 240 6% 10%;
+    --secondary-foreground: 0 0% 75%;
 
-    --muted: 220 20% 12%;
-    --muted-foreground: 220 8% 60%;
+    --muted: 240 5% 12%;
+    --muted-foreground: 240 5% 55%;
 
-    --accent: 320 100% 70%;
-    --accent-foreground: 220 26% 8%;
+    --accent: 330 85% 60%;
+    --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84% 60%;
-    --destructive-foreground: 220 8% 95%;
+    --destructive-foreground: 0 0% 98%;
 
-    --border: 220 20% 18%;
-    --input: 220 20% 14%;
-    --ring: 280 100% 70%;
+    --border: 240 6% 15%;
+    --input: 240 6% 12%;
+    --ring: 262 83% 58%;
 
     --radius: 0.75rem;
 
-    /* Editfy Custom Design Tokens */
-    --neon-purple: 280 100% 70%;
-    --neon-pink: 320 100% 70%;
-    --neon-cyan: 180 100% 70%;
-    --neon-green: 120 100% 70%;
+    /* EditLabs Custom Design Tokens - Suno-inspired */
+    --aura-purple: 262 83% 58%;
+    --aura-pink: 330 85% 60%;
+    --aura-blue: 220 90% 56%;
+    --aura-teal: 175 80% 45%;
     
-    --gradient-primary: linear-gradient(135deg, hsl(var(--neon-purple)), hsl(var(--neon-pink)));
-    --gradient-secondary: linear-gradient(135deg, hsl(var(--neon-cyan)), hsl(var(--neon-purple)));
-    --gradient-accent: linear-gradient(135deg, hsl(var(--neon-pink)), hsl(var(--neon-cyan)));
+    --gradient-primary: linear-gradient(135deg, hsl(var(--aura-purple)), hsl(var(--aura-pink)));
+    --gradient-secondary: linear-gradient(135deg, hsl(var(--aura-blue)), hsl(var(--aura-purple)));
+    --gradient-accent: linear-gradient(135deg, hsl(var(--aura-pink)), hsl(var(--aura-teal)));
+    --gradient-aura: radial-gradient(ellipse at center, hsl(var(--aura-purple) / 0.15) 0%, transparent 70%);
     
-    --shadow-neon: 0 0 30px hsl(var(--neon-purple) / 0.3);
-    --shadow-glow: 0 0 50px hsl(var(--neon-pink) / 0.2);
+    --shadow-aura: 0 0 80px hsl(var(--aura-purple) / 0.2);
+    --shadow-glow: 0 0 40px hsl(var(--aura-pink) / 0.15);
+    --shadow-soft: 0 4px 20px hsl(0 0% 0% / 0.3);
     
-    --transition-smooth: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    --transition-bounce: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-spring: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
 
-    --sidebar-background: 220 26% 10%;
-
-    --sidebar-foreground: 240 5.3% 26.1%;
-
-    --sidebar-primary: 240 5.9% 10%;
-
-    --sidebar-primary-foreground: 0 0% 98%;
-
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-background: 240 10% 6%;
+    --sidebar-foreground: 240 5% 55%;
+    --sidebar-primary: 262 83% 58%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 6% 10%;
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 240 6% 15%;
+    --sidebar-ring: 262 83% 58%;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
+    --background: 240 10% 4%;
+    --foreground: 0 0% 98%;
+    --card: 240 10% 6%;
+    --card-foreground: 0 0% 98%;
+    --popover: 240 10% 6%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 262 83% 58%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 240 6% 10%;
+    --secondary-foreground: 0 0% 75%;
+    --muted: 240 5% 12%;
+    --muted-foreground: 240 5% 55%;
+    --accent: 330 85% 60%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 6% 15%;
+    --input: 240 6% 12%;
+    --ring: 262 83% 58%;
+    --sidebar-background: 240 10% 6%;
+    --sidebar-foreground: 240 5% 55%;
+    --sidebar-primary: 262 83% 58%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-accent: 240 6% 10%;
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 240 6% 15%;
+    --sidebar-ring: 262 83% 58%;
   }
 }
 
@@ -116,6 +104,16 @@ All colors MUST be HSL for the dark, neon-themed video editor
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+/* Custom font import - Clean, modern sans-serif */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+@layer base {
+  html {
+    font-family: 'Inter', system-ui, sans-serif;
   }
 }

@@ -1,27 +1,27 @@
 import { Button } from "@/components/ui/button";
-import { Github, Twitter, Youtube, Mail } from "lucide-react";
+import { Github, Twitter, Youtube } from "lucide-react";
 
 export const Footer = () => {
   return (
-    <footer className="border-t border-border bg-card/50">
-      <div className="container mx-auto px-4 py-12">
-        <div className="grid md:grid-cols-4 gap-8">
+    <footer className="border-t border-border bg-card/30">
+      <div className="container mx-auto px-4 py-16">
+        <div className="grid md:grid-cols-5 gap-12">
           {/* Brand */}
-          <div className="space-y-4">
-            <h3 className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-              Editfy
+          <div className="md:col-span-2 space-y-4">
+            <h3 className="text-2xl font-bold">
+              EditLabs
             </h3>
-            <p className="text-sm text-muted-foreground">
-              Turn your clips into stunning TikTok-style edits automatically with AI.
+            <p className="text-sm text-muted-foreground max-w-xs">
+              Turn your clips into stunning TikTok-style edits automatically with AI. No editing skills required.
             </p>
-            <div className="flex gap-2">
-              <Button variant="ghost" size="icon" className="hover:text-neon-purple">
+            <div className="flex gap-1">
+              <Button variant="ghost" size="icon" className="hover:text-foreground text-muted-foreground">
                 <Twitter className="w-4 h-4" />
               </Button>
-              <Button variant="ghost" size="icon" className="hover:text-neon-pink">
+              <Button variant="ghost" size="icon" className="hover:text-foreground text-muted-foreground">
                 <Youtube className="w-4 h-4" />
               </Button>
-              <Button variant="ghost" size="icon" className="hover:text-neon-cyan">
+              <Button variant="ghost" size="icon" className="hover:text-foreground text-muted-foreground">
                 <Github className="w-4 h-4" />
               </Button>
             </div>
@@ -29,48 +29,42 @@ export const Footer = () => {
 
           {/* Product */}
           <div className="space-y-4">
-            <h4 className="font-semibold">Product</h4>
-            <div className="space-y-2 text-sm">
-              <a href="#" className="block text-muted-foreground hover:text-neon-purple transition-colors">Templates</a>
-              <a href="#" className="block text-muted-foreground hover:text-neon-purple transition-colors">Pricing</a>
-              <a href="#" className="block text-muted-foreground hover:text-neon-purple transition-colors">API</a>
-              <a href="#" className="block text-muted-foreground hover:text-neon-purple transition-colors">Integrations</a>
+            <h4 className="font-semibold text-sm">Product</h4>
+            <div className="space-y-3 text-sm">
+              <a href="#" className="block text-muted-foreground hover:text-foreground transition-colors">Templates</a>
+              <a href="#" className="block text-muted-foreground hover:text-foreground transition-colors">Pricing</a>
+              <a href="#" className="block text-muted-foreground hover:text-foreground transition-colors">API</a>
             </div>
           </div>
 
           {/* Resources */}
           <div className="space-y-4">
-            <h4 className="font-semibold">Resources</h4>
-            <div className="space-y-2 text-sm">
-              <a href="#" className="block text-muted-foreground hover:text-neon-pink transition-colors">Documentation</a>
-              <a href="#" className="block text-muted-foreground hover:text-neon-pink transition-colors">Tutorials</a>
-              <a href="#" className="block text-muted-foreground hover:text-neon-pink transition-colors">Blog</a>
-              <a href="#" className="block text-muted-foreground hover:text-neon-pink transition-colors">Community</a>
+            <h4 className="font-semibold text-sm">Resources</h4>
+            <div className="space-y-3 text-sm">
+              <a href="#" className="block text-muted-foreground hover:text-foreground transition-colors">Documentation</a>
+              <a href="#" className="block text-muted-foreground hover:text-foreground transition-colors">Tutorials</a>
+              <a href="#" className="block text-muted-foreground hover:text-foreground transition-colors">Blog</a>
             </div>
           </div>
 
-          {/* Support */}
+          {/* Legal */}
           <div className="space-y-4">
-            <h4 className="font-semibold">Support</h4>
-            <div className="space-y-2 text-sm">
-              <a href="#" className="block text-muted-foreground hover:text-neon-cyan transition-colors">Help Center</a>
-              <a href="#" className="block text-muted-foreground hover:text-neon-cyan transition-colors">Contact Us</a>
-              <a href="#" className="block text-muted-foreground hover:text-neon-cyan transition-colors">Status</a>
-              <a href="#" className="block text-muted-foreground hover:text-neon-cyan transition-colors">Privacy Policy</a>
+            <h4 className="font-semibold text-sm">Legal</h4>
+            <div className="space-y-3 text-sm">
+              <a href="#" className="block text-muted-foreground hover:text-foreground transition-colors">Privacy</a>
+              <a href="#" className="block text-muted-foreground hover:text-foreground transition-colors">Terms</a>
+              <a href="#" className="block text-muted-foreground hover:text-foreground transition-colors">Contact</a>
             </div>
           </div>
         </div>
 
         <div className="border-t border-border mt-12 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-sm text-muted-foreground">
-            © 2024 Editfy. All rights reserved.
+            © 2024 EditLabs. All rights reserved.
           </p>
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="sm" className="hover:text-neon-purple">
-              <Mail className="w-4 h-4 mr-2" />
-              Contact
-            </Button>
-          </div>
+          <p className="text-sm text-muted-foreground">
+            Made for creators, by creators
+          </p>
         </div>
       </div>
     </footer>

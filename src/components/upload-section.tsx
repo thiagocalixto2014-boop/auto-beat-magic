@@ -1,90 +1,86 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Upload, Music, Video, Clock } from "lucide-react";
+import { Upload, Music, Video, ArrowRight } from "lucide-react";
 
 export const UploadSection = () => {
   return (
-    <section className="py-20">
-      <div className="container mx-auto px-4">
+    <section className="py-24 relative">
+      {/* Subtle aura background */}
+      <div 
+        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] rounded-full animate-aura-pulse pointer-events-none"
+        style={{
+          background: 'radial-gradient(ellipse at center, hsl(262 83% 58% / 0.08) 0%, transparent 60%)'
+        }}
+      />
+
+      <div className="container mx-auto px-4 relative z-10">
         <div className="text-center mb-16">
-          <h2 className="text-4xl lg:text-5xl font-bold mb-6">
-            Ready to <span className="bg-gradient-accent bg-clip-text text-transparent">create</span>?
+          <h2 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight mb-6">
+            Ready to create?
           </h2>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-xl text-muted-foreground max-w-xl mx-auto">
             Upload your content and watch the magic happen
           </p>
         </div>
 
-        <div className="max-w-4xl mx-auto">
-          <div className="grid md:grid-cols-2 gap-8 mb-12">
+        <div className="max-w-3xl mx-auto">
+          <div className="grid md:grid-cols-2 gap-6 mb-10">
             {/* Music Upload */}
-            <Card className="p-8 bg-gradient-to-br from-card to-neon-purple/5 border-neon-purple/30 group hover:shadow-neon transition-all duration-300">
-              <div className="text-center space-y-6">
-                <div className="w-20 h-20 bg-neon-purple/10 rounded-full flex items-center justify-center mx-auto group-hover:scale-110 transition-transform">
-                  <Music className="w-10 h-10 text-neon-purple" />
+            <Card className="p-8 bg-card/80 border-border hover:border-aura-purple/50 transition-all duration-300 group">
+              <div className="space-y-6">
+                <div className="w-16 h-16 rounded-2xl bg-aura-purple/10 flex items-center justify-center group-hover:bg-aura-purple/20 transition-colors">
+                  <Music className="w-8 h-8 text-aura-purple" />
                 </div>
                 
                 <div>
-                  <h3 className="text-2xl font-bold mb-2">Upload Music</h3>
-                  <p className="text-muted-foreground">
+                  <h3 className="text-xl font-semibold mb-2">Upload Music</h3>
+                  <p className="text-muted-foreground text-sm">
                     Add your audio track (max 15 seconds)
                   </p>
                 </div>
 
-                <div className="border-2 border-dashed border-neon-purple/50 rounded-lg p-8 hover:border-neon-purple transition-colors">
-                  <Upload className="w-8 h-8 text-neon-purple mx-auto mb-4" />
-                  <p className="text-sm text-muted-foreground mb-4">
-                    Drag & drop your audio file or click to browse
-                  </p>
-                  <Button variant="upload" className="w-full">
-                    Choose Audio File
-                  </Button>
-                </div>
-
-                <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-                  <Clock className="w-4 h-4" />
-                  <span>Max 15 seconds</span>
+                <div className="border-2 border-dashed border-border rounded-xl p-6 hover:border-aura-purple/50 transition-colors cursor-pointer">
+                  <div className="text-center">
+                    <Upload className="w-6 h-6 text-muted-foreground mx-auto mb-3" />
+                    <p className="text-sm text-muted-foreground">
+                      Drag & drop or click to browse
+                    </p>
+                  </div>
                 </div>
               </div>
             </Card>
 
             {/* Video Upload */}
-            <Card className="p-8 bg-gradient-to-br from-card to-neon-pink/5 border-neon-pink/30 group hover:shadow-neon transition-all duration-300">
-              <div className="text-center space-y-6">
-                <div className="w-20 h-20 bg-neon-pink/10 rounded-full flex items-center justify-center mx-auto group-hover:scale-110 transition-transform">
-                  <Video className="w-10 h-10 text-neon-pink" />
+            <Card className="p-8 bg-card/80 border-border hover:border-aura-pink/50 transition-all duration-300 group">
+              <div className="space-y-6">
+                <div className="w-16 h-16 rounded-2xl bg-aura-pink/10 flex items-center justify-center group-hover:bg-aura-pink/20 transition-colors">
+                  <Video className="w-8 h-8 text-aura-pink" />
                 </div>
                 
                 <div>
-                  <h3 className="text-2xl font-bold mb-2">Upload Video Clips</h3>
-                  <p className="text-muted-foreground">
-                    Add multiple video clips to use in your edit
+                  <h3 className="text-xl font-semibold mb-2">Upload Clips</h3>
+                  <p className="text-muted-foreground text-sm">
+                    Add multiple video clips to use
                   </p>
                 </div>
 
-                <div className="border-2 border-dashed border-neon-pink/50 rounded-lg p-8 hover:border-neon-pink transition-colors">
-                  <Upload className="w-8 h-8 text-neon-pink mx-auto mb-4" />
-                  <p className="text-sm text-muted-foreground mb-4">
-                    Drag & drop your video files or click to browse
-                  </p>
-                  <Button variant="upload" className="w-full border-neon-pink text-neon-pink hover:bg-neon-pink/10">
-                    Choose Video Files
-                  </Button>
-                </div>
-
-                <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-                  <Video className="w-4 h-4" />
-                  <span>Multiple files supported</span>
+                <div className="border-2 border-dashed border-border rounded-xl p-6 hover:border-aura-pink/50 transition-colors cursor-pointer">
+                  <div className="text-center">
+                    <Upload className="w-6 h-6 text-muted-foreground mx-auto mb-3" />
+                    <p className="text-sm text-muted-foreground">
+                      Drag & drop or click to browse
+                    </p>
+                  </div>
                 </div>
               </div>
             </Card>
           </div>
 
-          {/* Action Button */}
+          {/* CTA */}
           <div className="text-center">
-            <Button variant="ai" size="xl" className="group">
-              <Upload className="w-6 h-6 mr-3 group-hover:animate-bounce" />
-              Start AI Edit Magic
+            <Button size="lg" className="text-lg px-10 py-6 bg-gradient-primary hover:opacity-90 shadow-aura group">
+              Start AI Edit
+              <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
             </Button>
             <p className="text-sm text-muted-foreground mt-4">
               Your video will be ready in seconds
