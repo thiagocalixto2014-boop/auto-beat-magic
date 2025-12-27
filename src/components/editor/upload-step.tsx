@@ -30,13 +30,13 @@ export const UploadStep = ({ project, userId, onUpdate, onNext }: UploadStepProp
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Check duration (max 15 seconds)
+    // Check duration (max 10 minutes)
     const audio = new Audio();
     audio.src = URL.createObjectURL(file);
     await new Promise((resolve) => {
       audio.onloadedmetadata = () => {
-        if (audio.duration > 15) {
-          toast.error("Audio must be 15 seconds or less");
+        if (audio.duration > 600) {
+          toast.error("Audio must be 10 minutes or less");
           return;
         }
         resolve(true);
@@ -72,7 +72,7 @@ export const UploadStep = ({ project, userId, onUpdate, onNext }: UploadStepProp
     const files = Array.from(e.target.files || []);
     if (!files.length) return;
 
-    // Check total duration (max 30 seconds)
+    // Check total duration (max 10 minutes)
     let totalDuration = 0;
     for (const file of files) {
       const video = document.createElement("video");
@@ -85,8 +85,8 @@ export const UploadStep = ({ project, userId, onUpdate, onNext }: UploadStepProp
       });
     }
 
-    if (totalDuration > 30) {
-      toast.error("Total clip duration must be 30 seconds or less");
+    if (totalDuration > 600) {
+      toast.error("Total clip duration must be 10 minutes or less");
       return;
     }
 
@@ -138,7 +138,7 @@ export const UploadStep = ({ project, userId, onUpdate, onNext }: UploadStepProp
       <div className="text-center">
         <h2 className="text-2xl font-bold mb-2">Upload Your Content</h2>
         <p className="text-muted-foreground">
-          Add your music (max 15s) and video clips (max 30s total)
+          Add your music and video clips (max 10 min each)
         </p>
       </div>
 
@@ -152,7 +152,7 @@ export const UploadStep = ({ project, userId, onUpdate, onNext }: UploadStepProp
             <div>
               <h3 className="font-semibold">Music Track</h3>
               <p className="text-sm text-muted-foreground flex items-center gap-1">
-                <Clock className="w-3 h-3" /> Max 15 seconds
+                <Clock className="w-3 h-3" /> Max 10 minutes
               </p>
             </div>
           </div>
@@ -210,7 +210,7 @@ export const UploadStep = ({ project, userId, onUpdate, onNext }: UploadStepProp
             <div>
               <h3 className="font-semibold">Video Clips</h3>
               <p className="text-sm text-muted-foreground flex items-center gap-1">
-                <Clock className="w-3 h-3" /> Max 30s total
+                <Clock className="w-3 h-3" /> Max 10 min total
               </p>
             </div>
           </div>
