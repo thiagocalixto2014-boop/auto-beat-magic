@@ -2,3 +2,9 @@ project_id = "ffzrezqwdlafysmhlzwq"
 
 [functions.analyze-beats]
 verify_jwt = true
+
+[functions.apply-video-effects]
+verify_jwt = true
+
+[functions.transloadit-webhook]
+verify_jwt = false

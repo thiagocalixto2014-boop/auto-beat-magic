@@ -73,25 +73,34 @@ export const GenerateStep = ({ project, onUpdate, onBack }: GenerateStepProps) =
     onUpdate({ status: "processing" });
 
     try {
-      // Call the AI processing edge function
-      const { data, error } = await supabase.functions.invoke("analyze-beats", {
+      // Get the first video clip URL for processing
+      const videoUrl = project.clips_urls?.[0];
+      
+      if (!videoUrl) {
+        throw new Error("No video clips uploaded");
+      }
+
+      // Call the video effects edge function with Transloadit
+      const { data, error } = await supabase.functions.invoke("apply-video-effects", {
         body: {
           projectId: project.id,
-          musicUrl: project.music_url,
-          clipsUrls: project.clips_urls,
-          template: project.template,
+          videoUrl: videoUrl,
           effects: project.effects,
         },
       });
 
       if (error) throw error;
 
+      console.log("Transloadit assembly created:", data);
+      toast.info("Video processing started. This may take a few minutes.");
+
       // Start the visual simulation while processing happens
       simulateProcessing();
     } catch (error: any) {
       console.error("Generation error:", error);
-      // Continue with simulation for demo purposes
-      simulateProcessing();
+      toast.error("Failed to start processing: " + error.message);
+      setProcessing(false);
+      onUpdate({ status: "draft" });
     }
   };
 
