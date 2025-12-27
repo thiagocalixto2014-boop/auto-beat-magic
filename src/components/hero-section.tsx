@@ -2,6 +2,8 @@ import { Button } from "@/components/ui/button";
 import { Sparkles, Plus, ChevronDown, Image } from "lucide-react";
 import { FloatingCard } from "./floating-card";
 import { Navbar } from "./navbar";
+import edit1Video from "@/assets/edit-1.mp4";
+import edit2Video from "@/assets/edit-2.mp4";
 
 // Floating particles component
 const Particles = () => {
@@ -69,9 +71,10 @@ export const HeroSection = () => {
       <div className="absolute left-0 top-1/2 -translate-y-1/2 hidden lg:block z-10">
         <FloatingCard 
           title="Viral Montage"
-          creator="Creator X"
+          creator="@nkftblll"
           className="animate-float -translate-x-16"
           gradient="bg-gradient-to-br from-purple-main/50 via-violet/30 to-background/80"
+          videoSrc={edit1Video}
         />
       </div>
 
@@ -79,9 +82,10 @@ export const HeroSection = () => {
       <div className="absolute right-0 top-1/2 -translate-y-1/2 hidden lg:block z-10">
         <FloatingCard 
           title="Beat Sync Edit"
-          creator="EditMaster"
+          creator="@lizrd_aep"
           className="animate-float-reverse translate-x-16"
           gradient="bg-gradient-to-br from-magenta/40 via-purple-glow/30 to-background/80"
+          videoSrc={edit2Video}
         />
       </div>
 
