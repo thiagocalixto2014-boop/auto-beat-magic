@@ -4,7 +4,7 @@ project_id = "ffzrezqwdlafysmhlzwq"
 verify_jwt = true
 
 [functions.apply-video-effects]
-verify_jwt = true
+verify_jwt = false
 
 [functions.transloadit-webhook]
 verify_jwt = false
