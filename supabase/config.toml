@@ -1,1 +1,4 @@
 project_id = "ffzrezqwdlafysmhlzwq"
+
+[functions.analyze-beats]
+verify_jwt = true
