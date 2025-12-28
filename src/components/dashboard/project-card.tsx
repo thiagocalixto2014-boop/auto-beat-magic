@@ -19,6 +19,7 @@ import {
   Video
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+import { getProxiedVideoUrl } from "@/lib/video-proxy";
 
 interface Project {
   id: string;
@@ -39,16 +40,20 @@ export const ProjectCard = ({ project, onDelete }: ProjectCardProps) => {
   const [deleting, setDeleting] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [thumbnailLoaded, setThumbnailLoaded] = useState(false);
+  const [outputVideoLoaded, setOutputVideoLoaded] = useState(false);
   const thumbnailRef = useRef<HTMLVideoElement>(null);
+  const outputRef = useRef<HTMLVideoElement>(null);
   const navigate = useNavigate();
 
-  // Get first clip URL for thumbnail
+  // Get first clip URL for thumbnail background
   const thumbnailUrl = project.clips_urls?.[0] || null;
+  
+  // Get proxied output URL for completed videos
+  const proxiedOutputUrl = getProxiedVideoUrl(project.output_url);
 
   useEffect(() => {
-    // Try to load thumbnail video
     if (thumbnailRef.current && thumbnailUrl) {
-      thumbnailRef.current.currentTime = 0.5; // Seek to 0.5s for better thumbnail
+      thumbnailRef.current.currentTime = 0.5;
     }
   }, [thumbnailUrl]);
 
@@ -85,6 +90,22 @@ export const ProjectCard = ({ project, onDelete }: ProjectCardProps) => {
     e.stopPropagation();
     if (!project.output_url) return;
     window.open(project.output_url, "_blank");
+  };
+
+  const handleMouseEnter = () => {
+    setIsHovered(true);
+    // Play output video on hover if loaded
+    if (outputRef.current && proxiedOutputUrl && outputVideoLoaded) {
+      outputRef.current.play().catch(() => {});
+    }
+  };
+
+  const handleMouseLeave = () => {
+    setIsHovered(false);
+    if (outputRef.current) {
+      outputRef.current.pause();
+      outputRef.current.currentTime = 0;
+    }
   };
 
   const getStatusConfig = () => {
@@ -138,8 +159,8 @@ export const ProjectCard = ({ project, onDelete }: ProjectCardProps) => {
     <Card
       className="group overflow-hidden border-border/50 hover:border-purple-main/40 bg-card/80 backdrop-blur-sm transition-all duration-300 cursor-pointer hover:shadow-purple hover:-translate-y-1"
       onClick={() => navigate(`/editor/${project.id}`)}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
     >
       {/* Preview Area */}
       <div className="aspect-video relative overflow-hidden">
@@ -160,18 +181,36 @@ export const ProjectCard = ({ project, onDelete }: ProjectCardProps) => {
             />
             {/* Dark overlay on blurred background */}
             <div className="absolute inset-0 bg-background/40" />
-            
-            {/* Sharp thumbnail in center (smaller) */}
-            <div className="absolute inset-4 flex items-center justify-center">
-              <video
-                src={thumbnailUrl}
-                className={`max-w-full max-h-full object-contain rounded-lg shadow-2xl transition-all duration-500 ${thumbnailLoaded ? 'opacity-100 scale-100' : 'opacity-0 scale-95'} ${isHovered ? 'scale-105' : ''}`}
-                muted
-                playsInline
-                preload="metadata"
-              />
-            </div>
           </>
+        )}
+
+        {/* Output video preview for completed projects */}
+        {isCompleted && proxiedOutputUrl && (
+          <div className="absolute inset-2 flex items-center justify-center">
+            <video
+              ref={outputRef}
+              src={proxiedOutputUrl}
+              className={`max-w-full max-h-full object-contain rounded-lg shadow-2xl transition-all duration-500 ${outputVideoLoaded ? 'opacity-100 scale-100' : 'opacity-0 scale-95'} ${isHovered ? 'scale-105' : ''}`}
+              muted
+              loop
+              playsInline
+              preload="metadata"
+              onLoadedData={() => setOutputVideoLoaded(true)}
+            />
+          </div>
+        )}
+
+        {/* Sharp thumbnail in center for non-completed */}
+        {!isCompleted && thumbnailUrl && thumbnailLoaded && (
+          <div className="absolute inset-4 flex items-center justify-center">
+            <video
+              src={thumbnailUrl}
+              className={`max-w-full max-h-full object-contain rounded-lg shadow-2xl transition-all duration-500 ${isHovered ? 'scale-105' : ''}`}
+              muted
+              playsInline
+              preload="metadata"
+            />
+          </div>
         )}
 
         {/* Status-specific content overlay */}
@@ -186,7 +225,7 @@ export const ProjectCard = ({ project, onDelete }: ProjectCardProps) => {
             </div>
           )}
           
-          {isCompleted && (
+          {isCompleted && outputVideoLoaded && (
             <div className={`transition-all duration-300 ${isHovered ? 'opacity-100 scale-100' : 'opacity-0 scale-90'}`}>
               <div className="bg-background/70 backdrop-blur-md rounded-full p-4 shadow-lg pointer-events-auto">
                 <Play className="w-8 h-8 text-foreground fill-current" />
