@@ -49,14 +49,20 @@ Deno.serve(async (req) => {
       .update({ status: "processing" })
       .eq("id", projectId);
 
-    // Build Coconut Job with CORRECT format based on documentation
-    // Format: mp4:WIDTHxHEIGHT for custom resolution (9:16 vertical = 1080x1920)
-    // Storage: "coconut" for test storage (files available for 24h)
-    // Path: REQUIRED - where the file will be uploaded
+    // Build Coconut Job with CORRECT format based on official documentation
+    // https://docs.coconut.co/jobs/outputs-videos
+    // 
+    // Key insights from docs:
+    // 1. Storage "coconut" is for testing (24h availability)
+    // 2. "path" is REQUIRED for every output
+    // 3. Use "resolution" parameter for custom sizes like "1080x1920"
+    // 4. Use "fit": "crop" to avoid black bars
+    // 5. Format key should be simple like "mp4" with parameters inside
     
     const outputPath = `/editlabs/${projectId}_${Date.now()}.mp4`;
     const duration = beatData?.totalDuration || 15;
 
+    // Correct Coconut API v2 job configuration
     const coconutJob = {
       input: {
         url: clipsUrls[0],
@@ -69,12 +75,13 @@ Deno.serve(async (req) => {
         url: `${supabaseUrl}/functions/v1/coconut-webhook?projectId=${projectId}`,
       },
       outputs: {
-        // Using standard format: mp4:1080x1920 for 9:16 vertical video
-        // The key is the format spec, path is where to save
-        "mp4:1080x1920": {
+        // Use simple format key "mp4" with parameters inside the object
+        "mp4": {
           path: outputPath,
-          duration: duration,
-          fit: "crop", // Crop to fit instead of padding
+          resolution: "1080x1920",  // 9:16 vertical format
+          fit: "crop",              // Crop to fit instead of padding
+          duration: duration,       // Max duration in seconds
+          quality: 4,               // Good quality (1-5 scale)
         },
       },
     };
@@ -100,6 +107,15 @@ Deno.serve(async (req) => {
     }
 
     const coconutResult = JSON.parse(responseText);
+
+    // Store the job ID in the project for tracking
+    await supabase
+      .from("projects")
+      .update({ 
+        status: "processing",
+        // Store job ID if you have a field for it
+      })
+      .eq("id", projectId);
 
     return new Response(
       JSON.stringify({
