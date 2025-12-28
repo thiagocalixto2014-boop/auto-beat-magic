@@ -27,6 +27,7 @@ interface Project {
   template: string;
   created_at: string;
   output_url: string | null;
+  clips_urls?: string[] | null;
 }
 
 interface ProjectCardProps {
@@ -37,9 +38,19 @@ interface ProjectCardProps {
 export const ProjectCard = ({ project, onDelete }: ProjectCardProps) => {
   const [deleting, setDeleting] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
-  const [videoError, setVideoError] = useState(false);
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const [thumbnailLoaded, setThumbnailLoaded] = useState(false);
+  const thumbnailRef = useRef<HTMLVideoElement>(null);
   const navigate = useNavigate();
+
+  // Get first clip URL for thumbnail
+  const thumbnailUrl = project.clips_urls?.[0] || null;
+
+  useEffect(() => {
+    // Try to load thumbnail video
+    if (thumbnailRef.current && thumbnailUrl) {
+      thumbnailRef.current.currentTime = 0.5; // Seek to 0.5s for better thumbnail
+    }
+  }, [thumbnailUrl]);
 
   const handleDelete = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -66,8 +77,6 @@ export const ProjectCard = ({ project, onDelete }: ProjectCardProps) => {
   const handleDownload = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!project.output_url) return;
-    
-    // Open in new tab - works even with HTTP URLs
     window.open(project.output_url, "_blank");
     toast.success("Opening video in new tab");
   };
@@ -76,21 +85,6 @@ export const ProjectCard = ({ project, onDelete }: ProjectCardProps) => {
     e.stopPropagation();
     if (!project.output_url) return;
     window.open(project.output_url, "_blank");
-  };
-
-  const handleMouseEnter = () => {
-    setIsHovered(true);
-    if (videoRef.current && project.output_url && !videoError) {
-      videoRef.current.play().catch(() => setVideoError(true));
-    }
-  };
-
-  const handleMouseLeave = () => {
-    setIsHovered(false);
-    if (videoRef.current) {
-      videoRef.current.pause();
-      videoRef.current.currentTime = 0;
-    }
   };
 
   const getStatusConfig = () => {
@@ -140,73 +134,73 @@ export const ProjectCard = ({ project, onDelete }: ProjectCardProps) => {
   const isCompleted = project.status === "completed" && project.output_url;
   const isProcessing = project.status === "processing";
 
-  // Check if URL is HTTP (will be blocked on HTTPS sites)
-  const isHttpUrl = project.output_url?.startsWith("http://");
-
   return (
     <Card
       className="group overflow-hidden border-border/50 hover:border-purple-main/40 bg-card/80 backdrop-blur-sm transition-all duration-300 cursor-pointer hover:shadow-purple hover:-translate-y-1"
       onClick={() => navigate(`/editor/${project.id}`)}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
     >
       {/* Preview Area */}
-      <div className={`aspect-video relative overflow-hidden bg-gradient-to-br ${templateGradients[project.template] || templateGradients.flashy}`}>
-        {isCompleted && !videoError && !isHttpUrl ? (
-          <video
-            ref={videoRef}
-            src={project.output_url!}
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-            muted
-            loop
-            playsInline
-            preload="metadata"
-            onError={() => setVideoError(true)}
-          />
-        ) : isCompleted ? (
-          // Show placeholder for completed videos that can't preview (HTTP)
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
-            <div className="w-16 h-16 rounded-full bg-emerald-500/20 flex items-center justify-center">
-              <Video className="w-8 h-8 text-emerald-400" />
+      <div className="aspect-video relative overflow-hidden">
+        {/* Background gradient fallback */}
+        <div className={`absolute inset-0 bg-gradient-to-br ${templateGradients[project.template] || templateGradients.flashy}`} />
+        
+        {/* Thumbnail from uploaded clip - blurred background */}
+        {thumbnailUrl && (
+          <>
+            <video
+              ref={thumbnailRef}
+              src={thumbnailUrl}
+              className={`absolute inset-0 w-full h-full object-cover scale-110 blur-md transition-opacity duration-500 ${thumbnailLoaded ? 'opacity-100' : 'opacity-0'}`}
+              muted
+              playsInline
+              preload="metadata"
+              onLoadedData={() => setThumbnailLoaded(true)}
+            />
+            {/* Dark overlay on blurred background */}
+            <div className="absolute inset-0 bg-background/40" />
+            
+            {/* Sharp thumbnail in center (smaller) */}
+            <div className="absolute inset-4 flex items-center justify-center">
+              <video
+                src={thumbnailUrl}
+                className={`max-w-full max-h-full object-contain rounded-lg shadow-2xl transition-all duration-500 ${thumbnailLoaded ? 'opacity-100 scale-100' : 'opacity-0 scale-95'} ${isHovered ? 'scale-105' : ''}`}
+                muted
+                playsInline
+                preload="metadata"
+              />
             </div>
-            <span className="text-xs text-emerald-400/80 font-medium">Video Ready</span>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={handleOpenVideo}
-              className="text-xs border-emerald-400/30 text-emerald-400 hover:bg-emerald-400/10"
-            >
-              <ExternalLink className="w-3 h-3 mr-1" />
-              Open Video
-            </Button>
-          </div>
-        ) : (
-          <div className="absolute inset-0 flex items-center justify-center">
-            {isProcessing ? (
-              <div className="flex flex-col items-center gap-3">
-                <div className="relative">
-                  <div className="w-16 h-16 rounded-full border-2 border-purple-main/30 border-t-purple-light animate-spin" />
-                  <Sparkles className="w-6 h-6 text-purple-light absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
-                </div>
-                <span className="text-xs text-purple-light/80 font-medium">Processing...</span>
+          </>
+        )}
+
+        {/* Status-specific content overlay */}
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          {isProcessing && (
+            <div className="flex flex-col items-center gap-3 bg-background/60 backdrop-blur-sm rounded-xl p-4">
+              <div className="relative">
+                <div className="w-14 h-14 rounded-full border-2 border-purple-main/30 border-t-purple-light animate-spin" />
+                <Sparkles className="w-5 h-5 text-purple-light absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
               </div>
-            ) : (
-              <Sparkles className="w-12 h-12 text-foreground/15" />
-            )}
-          </div>
-        )}
-
-        {/* Overlay gradient */}
-        <div className="absolute inset-0 bg-gradient-to-t from-card via-transparent to-transparent opacity-60 pointer-events-none" />
-
-        {/* Play button overlay for completed videos with working preview */}
-        {isCompleted && !videoError && !isHttpUrl && (
-          <div className={`absolute inset-0 flex items-center justify-center transition-opacity duration-300 pointer-events-none ${isHovered ? 'opacity-100' : 'opacity-0'}`}>
-            <div className="bg-background/60 backdrop-blur-md rounded-full p-4 shadow-lg">
-              <Play className="w-8 h-8 text-foreground fill-current" />
+              <span className="text-xs text-purple-light font-medium">Processing...</span>
             </div>
-          </div>
-        )}
+          )}
+          
+          {isCompleted && (
+            <div className={`transition-all duration-300 ${isHovered ? 'opacity-100 scale-100' : 'opacity-0 scale-90'}`}>
+              <div className="bg-background/70 backdrop-blur-md rounded-full p-4 shadow-lg pointer-events-auto">
+                <Play className="w-8 h-8 text-foreground fill-current" />
+              </div>
+            </div>
+          )}
+          
+          {!thumbnailUrl && !isProcessing && !isCompleted && (
+            <Sparkles className="w-12 h-12 text-foreground/20" />
+          )}
+        </div>
+
+        {/* Bottom gradient overlay */}
+        <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-card to-transparent" />
 
         {/* Status badge */}
         <Badge 
@@ -216,6 +210,14 @@ export const ProjectCard = ({ project, onDelete }: ProjectCardProps) => {
           {statusConfig.icon}
           {statusConfig.label}
         </Badge>
+
+        {/* Video ready indicator for completed */}
+        {isCompleted && (
+          <div className="absolute bottom-3 left-3 flex items-center gap-1.5 px-2 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/30 backdrop-blur-sm">
+            <Video className="w-3 h-3 text-emerald-400" />
+            <span className="text-xs text-emerald-400 font-medium">Ready</span>
+          </div>
+        )}
       </div>
 
       {/* Info Section */}
