@@ -22,33 +22,6 @@ interface RequestBody {
   beatData: BeatData;
 }
 
-/**
- * Professional TikTok-Style Effect Filters for Coconut
- */
-function getEffectFilter(effect: string, intensity: number, duration: number): string {
-  const normalized = intensity / 10;
-  const frames = Math.max(1, Math.round(duration * 30));
-  
-  switch (effect) {
-    case "zoom":
-    case "smooth-zoom":
-    case "perfect-zoom":
-      const zoomEnd = 1.0 + (0.5 * normalized);
-      return `zoompan=z='min(zoom+${0.005 * intensity},${zoomEnd})':d=${frames}:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=1080x1920`;
-    
-    case "shake":
-    case "impact-shake":
-      const amp = 30 * normalized;
-      return `crop=iw-${amp}:ih-${amp}:${amp/2}+${amp/2}*sin(2*PI*t*20):${amp/2}+${amp/2}*cos(2*PI*t*25),scale=1080:1920`;
-    
-    case "flash":
-      return `eq=brightness='if(lt(t,0.15),${0.6 * normalized}*(1-t/0.15),0)'`;
-      
-    default:
-      return `zoompan=z='zoom+0.001':d=${frames}:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=1080x1920`;
-  }
-}
-
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -56,7 +29,7 @@ Deno.serve(async (req) => {
 
   try {
     const body: RequestBody = await req.json();
-    const { projectId, clipsUrls, musicUrl, effects, beatData } = body;
+    const { projectId, clipsUrls, musicUrl, beatData } = body;
 
     if (!projectId || !clipsUrls?.length) {
       throw new Error("Missing projectId or clipsUrls");
@@ -76,24 +49,18 @@ Deno.serve(async (req) => {
       .update({ status: "processing" })
       .eq("id", projectId);
 
-    // Build video filter with professional effects
-    let videoFilter = "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920";
+    // Build Coconut Job with CORRECT format based on documentation
+    // Format: mp4:WIDTHxHEIGHT for custom resolution (9:16 vertical = 1080x1920)
+    // Storage: "coconut" for test storage (files available for 24h)
+    // Path: REQUIRED - where the file will be uploaded
     
-    if (beatData.segments?.length && beatData.effectTimings?.length) {
-      const firstEffect = beatData.effectTimings[0];
-      if (firstEffect) {
-        const filter = getEffectFilter(firstEffect.effect, firstEffect.intensity, beatData.totalDuration);
-        videoFilter += `,${filter}`;
-      }
-    }
+    const outputPath = `/editlabs/${projectId}_${Date.now()}.mp4`;
+    const duration = beatData?.totalDuration || 15;
 
-    // Build Coconut Job with REQUIRED storage configuration
-    // Using Coconut's test storage (files deleted after 24h, but works for testing)
     const coconutJob = {
       input: {
         url: clipsUrls[0],
       },
-      // THIS IS THE KEY FIX: Coconut requires a storage destination
       storage: {
         service: "coconut",
       },
@@ -102,16 +69,18 @@ Deno.serve(async (req) => {
         url: `${supabaseUrl}/functions/v1/coconut-webhook?projectId=${projectId}`,
       },
       outputs: {
+        // Using standard format: mp4:1080x1920 for 9:16 vertical video
+        // The key is the format spec, path is where to save
         "mp4:1080x1920": {
-          path: `/editlabs/${projectId}_${Date.now()}.mp4`,
-          duration: beatData.totalDuration || 15,
-          video_filter: videoFilter,
-          ...(musicUrl && { audio_source: musicUrl }),
+          path: outputPath,
+          duration: duration,
+          fit: "crop", // Crop to fit instead of padding
         },
       },
     };
 
-    console.log("Coconut job config:", JSON.stringify(coconutJob, null, 2));
+    console.log("=== COCONUT JOB CONFIG ===");
+    console.log(JSON.stringify(coconutJob, null, 2));
 
     const coconutResponse = await fetch("https://api.coconut.co/v2/jobs", {
       method: "POST",
@@ -123,7 +92,8 @@ Deno.serve(async (req) => {
     });
 
     const responseText = await coconutResponse.text();
-    console.log("Coconut API response:", responseText);
+    console.log("=== COCONUT API RESPONSE ===");
+    console.log(responseText);
     
     if (!coconutResponse.ok) {
       throw new Error(`Coconut API error: ${responseText}`);
