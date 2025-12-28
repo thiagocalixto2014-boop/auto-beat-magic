@@ -98,7 +98,13 @@ Deno.serve(async (req) => {
     }
 
     // Build Coconut job configuration
-    // Reference: https://docs.coconut.co/api-reference/v2/jobs
+    // Using standard format with Coconut CDN output
+    // Reference: https://docs.coconut.co/
+    const outputFilename = `${projectId}_${Date.now()}.mp4`;
+    
+    // Build output format string - Coconut uses format like "mp4:720p" or "mp4:1080x1920"
+    const outputFormat = "mp4:1080x1920";
+    
     const coconutJob: Record<string, unknown> = {
       input: {
         url: mainClipUrl,
@@ -107,28 +113,19 @@ Deno.serve(async (req) => {
         type: "http",
         url: `${supabaseUrl}/functions/v1/coconut-webhook?projectId=${projectId}`,
       },
-      outputs: {},
+      outputs: {
+        [outputFormat]: musicUrl 
+          ? {
+              key: "final_video",
+              audio_source: musicUrl,
+              duration: totalDuration,
+            }
+          : {
+              key: "final_video", 
+              duration: totalDuration,
+            },
+      },
     };
-
-    // Configure output based on whether we have music
-    if (musicUrl) {
-      // With music: use audio_source to merge audio
-      (coconutJob.outputs as Record<string, unknown>)["mp4:1080x1920"] = {
-        duration: totalDuration,
-        audio_source: musicUrl,
-        ffmpeg: {
-          vf: videoFilter,
-        },
-      };
-    } else {
-      // Without music: simple video encode
-      (coconutJob.outputs as Record<string, unknown>)["mp4:1080x1920"] = {
-        duration: totalDuration,
-        ffmpeg: {
-          vf: videoFilter,
-        },
-      };
-    }
 
     console.log("Coconut job config:", JSON.stringify(coconutJob, null, 2));
 
