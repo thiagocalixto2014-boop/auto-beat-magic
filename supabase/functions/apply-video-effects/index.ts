@@ -166,8 +166,14 @@ function buildTransloaditSteps(
     if (musicUrl) {
       steps["add_music"] = {
         robot: "/video/encode",
-        // Array order becomes FFmpeg input indices: 0 = video, 1 = audio
-        use: ["concatenate", "import_music"],
+        // IMPORTANT: Use multi-input syntax so Transloadit actually provides both inputs.
+        // Input order is preserved: 0 = video, 1 = audio.
+        use: {
+          steps: [
+            { name: "concatenate", as: "video" },
+            { name: "import_music", as: "audio" },
+          ],
+        },
         preset: "iphone-high",
         ffmpeg_stack: "v6.0.0",
         ffmpeg: {
@@ -180,7 +186,7 @@ function buildTransloaditSteps(
   } else {
     // Fallback: Simple processing without beat data
     console.log("No segments found, using simple processing...");
-    
+
     steps["simple_encode"] = {
       robot: "/video/encode",
       use: "import_clip_0",
@@ -195,7 +201,13 @@ function buildTransloaditSteps(
     if (musicUrl) {
       steps["add_music"] = {
         robot: "/video/encode",
-        use: ["simple_encode", "import_music"],
+        // IMPORTANT: multi-input syntax so FFmpeg gets input #1 for audio.
+        use: {
+          steps: [
+            { name: "simple_encode", as: "video" },
+            { name: "import_music", as: "audio" },
+          ],
+        },
         preset: "iphone-high",
         ffmpeg_stack: "v6.0.0",
         ffmpeg: {
