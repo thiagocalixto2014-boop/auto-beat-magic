@@ -33,13 +33,11 @@ function getEffectFilter(effect: string, intensity: number, duration: number): s
     case "zoom":
     case "smooth-zoom":
     case "perfect-zoom":
-      // Aggressive TikTok Zoom: Starts with a "pop" and eases out
       const zoomEnd = 1.0 + (0.5 * normalized);
       return `zoompan=z='min(zoom+${0.005 * intensity},${zoomEnd})':d=${frames}:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=1080x1920`;
     
     case "shake":
     case "impact-shake":
-      // High-energy TikTok Shake: Rapid movement that decays
       const amp = 30 * normalized;
       return `crop=iw-${amp}:ih-${amp}:${amp/2}+${amp/2}*sin(2*PI*t*20):${amp/2}+${amp/2}*cos(2*PI*t*25),scale=1080:1920`;
     
@@ -73,14 +71,16 @@ Deno.serve(async (req) => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Update project status
     await supabase
       .from("projects")
       .update({ status: "processing" })
       .eq("id", projectId);
 
     // Build Coconut Job
-    // Reference: https://docs.coconut.co/
+    // To fix "The output URL cannot be empty", we must provide a destination.
+    // We'll use Coconut's default storage by providing a filename in the key.
+    const outputFilename = `edit_labs_${projectId}_${Date.now()}.mp4`;
+    
     const coconutJob: Record<string, unknown> = {
       notification: {
         type: "http",
@@ -88,19 +88,16 @@ Deno.serve(async (req) => {
       },
       outputs: {
         "mp4:1080x1920": {
-          key: "video_output",
-          input: clipsUrls[0], // Using first clip as primary for now
+          key: outputFilename, // Providing a filename here often satisfies the output requirement
+          input: clipsUrls[0],
           audio_source: musicUrl,
           duration: beatData.totalDuration || 15,
-          // Coconut uses FFmpeg filters via the 'video_filter' parameter
           video_filter: "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920",
         },
       },
     };
 
-    // Add professional effects if beat data is available
     if (beatData.segments?.length) {
-      // For Coconut, we'll apply the primary effect to the main output
       const firstEffect = beatData.effectTimings?.[0];
       if (firstEffect) {
         const filter = getEffectFilter(firstEffect.effect, firstEffect.intensity, beatData.totalDuration);
