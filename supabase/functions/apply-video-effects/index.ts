@@ -73,7 +73,7 @@ function buildTransloaditSteps(
   projectId: string
 ) {
   const steps: Record<string, unknown> = {};
-  
+
   console.log("Building Transloadit steps for beat-synced edit...");
   console.log("Segments:", beatData.segments?.length);
   console.log("Effect timings:", beatData.effectTimings?.length);
@@ -114,32 +114,27 @@ function buildTransloaditSteps(
     beatData.segments.forEach((segment, index) => {
       const clipIndex = segment.clipIndex % clipsUrls.length;
       const duration = segment.end - segment.start;
-      
+
       // Find if there's an effect for this segment
       const effectTiming = beatData.effectTimings?.find(
-        e => e.time >= segment.start && e.time < segment.end
+        (e) => e.time >= segment.start && e.time < segment.end
       );
-      
-      let ffmpegFilters = [];
-      
+
+      const ffmpegFilters: string[] = [];
+
       // Add effect filter if applicable
       if (effectTiming) {
         const filter = getEffectFilter(effectTiming.effect, effectTiming.intensity);
-        if (filter) {
-          ffmpegFilters.push(filter);
-        }
+        if (filter) ffmpegFilters.push(filter);
       }
-      
-      // Resize step already enforces 1080x1920.
 
-      
       steps[`segment_${index}`] = {
         robot: "/video/encode",
         use: `resize_${clipIndex}`,
         preset: "iphone-high",
         ffmpeg_stack: "v6.0.0",
         ffmpeg: {
-          ss: 0, // Start from beginning of clip (we'll vary which clip is used)
+          ss: 0,
           t: duration,
           vf: ffmpegFilters.join(","),
         },
@@ -165,26 +160,21 @@ function buildTransloaditSteps(
     // Step 4: Add music track if provided
     if (musicUrl) {
       steps["add_music"] = {
-        robot: "/video/encode",
-        // IMPORTANT: Use multi-input syntax so Transloadit actually provides both inputs.
-        // Input order is preserved: 0 = video, 1 = audio.
+        robot: "/video/merge",
         use: {
           steps: [
             { name: "concatenate", as: "video" },
             { name: "import_music", as: "audio" },
           ],
         },
+        replace_audio: true,
+        duration: beatData.totalDuration || 15,
         preset: "iphone-high",
         ffmpeg_stack: "v6.0.0",
-        ffmpeg: {
-          t: beatData.totalDuration || 15,
-          shortest: true,
-          map: ["0:v:0", "1:a:0"],
-        },
       };
     }
   } else {
-    // Fallback: Simple processing without beat data
+    // Fallback: Simple processing without beat segments
     console.log("No segments found, using simple processing...");
 
     steps["simple_encode"] = {
@@ -193,35 +183,35 @@ function buildTransloaditSteps(
       preset: "iphone-high",
       ffmpeg_stack: "v6.0.0",
       ffmpeg: {
-        t: 15,
+        t: beatData.totalDuration || 15,
         vf: "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920",
       },
     };
 
     if (musicUrl) {
       steps["add_music"] = {
-        robot: "/video/encode",
-        // IMPORTANT: multi-input syntax so FFmpeg gets input #1 for audio.
+        robot: "/video/merge",
         use: {
           steps: [
             { name: "simple_encode", as: "video" },
             { name: "import_music", as: "audio" },
           ],
         },
+        replace_audio: true,
+        duration: beatData.totalDuration || 15,
         preset: "iphone-high",
         ffmpeg_stack: "v6.0.0",
-        ffmpeg: {
-          t: 15,
-          shortest: true,
-          map: ["0:v:0", "1:a:0"],
-        },
       };
     }
   }
 
   // Final export step - use Transloadit CDN
-  const finalStep = musicUrl ? "add_music" : (beatData.segments?.length > 0 ? "concatenate" : "simple_encode");
-  
+  const finalStep = musicUrl
+    ? "add_music"
+    : beatData.segments?.length
+      ? "concatenate"
+      : "simple_encode";
+
   steps["exported"] = {
     robot: "/file/serve",
     use: finalStep,
