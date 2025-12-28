@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { ArrowLeft, Download, Share2, RotateCcw, CheckCircle, ExternalLink, AlertTriangle } from "lucide-react";
+import { ArrowLeft, Download, Share2, RotateCcw, CheckCircle, ExternalLink, Copy } from "lucide-react";
 import { toast } from "sonner";
+import { getProxiedVideoUrl } from "@/lib/video-proxy";
 
 interface Project {
   id: string;
@@ -18,14 +19,14 @@ interface ExportStepProps {
 export const ExportStep = ({ project, onBack }: ExportStepProps) => {
   const [videoError, setVideoError] = useState(false);
 
-  // Check if URL is HTTP (will be blocked on HTTPS sites)
-  const isHttpUrl = project.output_url?.startsWith("http://");
-  const canPreview = project.output_url && !isHttpUrl && !videoError;
+  // Get proxied URL for playback
+  const proxiedUrl = getProxiedVideoUrl(project.output_url);
+  const canPreview = proxiedUrl && !videoError;
 
   const handleDownload = () => {
     if (!project.output_url) return;
     
-    // Open in new tab - most reliable method for external URLs
+    // Use original URL for download (opens in new tab)
     window.open(project.output_url, "_blank");
     toast.success("Opening video - right-click to save");
   };
@@ -49,9 +50,10 @@ export const ExportStep = ({ project, onBack }: ExportStepProps) => {
     }
   };
 
-  const handleOpenExternal = () => {
+  const handleCopyUrl = () => {
     if (project.output_url) {
-      window.open(project.output_url, "_blank");
+      navigator.clipboard.writeText(project.output_url);
+      toast.success("URL copied!");
     }
   };
 
@@ -72,38 +74,35 @@ export const ExportStep = ({ project, onBack }: ExportStepProps) => {
         <div className="aspect-[9/16] max-h-[500px] bg-background mx-auto relative">
           {canPreview ? (
             <video
-              src={project.output_url!}
+              key={proxiedUrl}
+              src={proxiedUrl}
               controls
               autoPlay
               loop
               className="w-full h-full object-contain"
-              onError={() => setVideoError(true)}
+              onError={() => {
+                console.error("Video playback error");
+                setVideoError(true);
+              }}
             />
-          ) : project.output_url ? (
-            // Show message when video can't be previewed inline (HTTP URL or error)
+          ) : (
             <div className="w-full h-full flex flex-col items-center justify-center text-center p-6 gap-4">
-              <div className="w-20 h-20 rounded-full bg-amber-500/20 flex items-center justify-center">
-                <AlertTriangle className="w-10 h-10 text-amber-400" />
+              <div className="w-20 h-20 rounded-full bg-purple-main/20 flex items-center justify-center">
+                <ExternalLink className="w-10 h-10 text-purple-light" />
               </div>
               <div>
                 <h3 className="font-semibold text-lg mb-2">Preview Unavailable</h3>
                 <p className="text-sm text-muted-foreground mb-4">
-                  {isHttpUrl 
-                    ? "The video server uses HTTP. Click below to view the video in a new tab."
-                    : "Unable to preview the video. Click below to open it directly."}
+                  Click below to open the video in a new tab.
                 </p>
               </div>
               <Button
-                onClick={handleOpenExternal}
+                onClick={handleDownload}
                 className="bg-gradient-purple hover:opacity-90 gap-2"
               >
                 <ExternalLink className="w-4 h-4" />
-                Open Video in New Tab
+                Open Video
               </Button>
-            </div>
-          ) : (
-            <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-              No preview available
             </div>
           )}
         </div>
@@ -122,12 +121,10 @@ export const ExportStep = ({ project, onBack }: ExportStepProps) => {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => {
-                navigator.clipboard.writeText(project.output_url!);
-                toast.success("URL copied!");
-              }}
-              className="shrink-0"
+              onClick={handleCopyUrl}
+              className="shrink-0 gap-1"
             >
+              <Copy className="w-3 h-3" />
               Copy
             </Button>
           </div>
