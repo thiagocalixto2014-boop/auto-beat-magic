@@ -19,30 +19,84 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json();
+    
+    console.log("=== COCONUT WEBHOOK ===");
+    console.log("Project ID:", projectId);
+    console.log("Event:", body.event);
+    console.log("Full body:", JSON.stringify(body, null, 2));
+
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+    // Coconut webhook events:
+    // - job.completed: All outputs are done
+    // - job.failed: Job failed
+    // - output.completed: Single output is done
+
     if (body.event === "job.completed") {
+      console.log("Job completed successfully");
+      
       let outputUrl = null;
       
-      // Extract output URL from Coconut response
-      if (body.outputs && body.outputs.length > 0) {
-        const videoOutput = body.outputs.find((o: any) => o.key === "video_output" || !o.key);
-        outputUrl = videoOutput?.url || videoOutput?.urls?.[0];
+      // Try to find the output URL from various possible locations in the response
+      // Coconut can return URLs in different formats depending on the API version
+      
+      // Check outputs array
+      if (body.outputs && Array.isArray(body.outputs)) {
+        for (const output of body.outputs) {
+          if (output.url) {
+            outputUrl = output.url;
+            break;
+          }
+          if (output.urls && output.urls.length > 0) {
+            outputUrl = output.urls[0];
+            break;
+          }
+        }
+      }
+      
+      // Check outputs object (keyed by format)
+      if (!outputUrl && body.outputs && typeof body.outputs === "object") {
+        for (const key of Object.keys(body.outputs)) {
+          const output = body.outputs[key];
+          if (output?.url) {
+            outputUrl = output.url;
+            break;
+          }
+        }
       }
 
-      if (outputUrl) {
-        await supabase
-          .from("projects")
-          .update({
-            status: "completed",
-            output_url: outputUrl,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", projectId);
+      // Check data.outputs format
+      if (!outputUrl && body.data?.outputs) {
+        const outputs = body.data.outputs;
+        for (const key of Object.keys(outputs)) {
+          if (outputs[key]?.url) {
+            outputUrl = outputs[key].url;
+            break;
+          }
+        }
       }
-    } else if (body.event === "job.failed") {
+
+      console.log("Extracted output URL:", outputUrl);
+
+      const { error: updateError } = await supabase
+        .from("projects")
+        .update({
+          status: "completed",
+          output_url: outputUrl,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", projectId);
+
+      if (updateError) {
+        console.error("Error updating project:", updateError);
+      } else {
+        console.log("Project updated to completed with URL:", outputUrl);
+      }
+    } else if (body.event === "job.failed" || body.status === "error") {
+      console.error("Job failed:", body.error || body.message);
+
       await supabase
         .from("projects")
         .update({ 
@@ -50,6 +104,11 @@ Deno.serve(async (req) => {
           updated_at: new Date().toISOString(),
         })
         .eq("id", projectId);
+    } else if (body.event === "output.completed") {
+      console.log("Single output completed:", body.output);
+      // We'll wait for job.completed to finalize
+    } else {
+      console.log("Received event:", body.event);
     }
 
     return new Response(

@@ -76,34 +76,42 @@ Deno.serve(async (req) => {
       .update({ status: "processing" })
       .eq("id", projectId);
 
-    // Build Coconut Job
-    // To fix "The output URL cannot be empty", we must provide a destination.
-    // We'll use Coconut's default storage by providing a filename in the key.
-    const outputFilename = `edit_labs_${projectId}_${Date.now()}.mp4`;
+    // Build video filter with professional effects
+    let videoFilter = "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920";
     
-    const coconutJob: Record<string, unknown> = {
+    if (beatData.segments?.length && beatData.effectTimings?.length) {
+      const firstEffect = beatData.effectTimings[0];
+      if (firstEffect) {
+        const filter = getEffectFilter(firstEffect.effect, firstEffect.intensity, beatData.totalDuration);
+        videoFilter += `,${filter}`;
+      }
+    }
+
+    // Build Coconut Job with REQUIRED storage configuration
+    // Using Coconut's test storage (files deleted after 24h, but works for testing)
+    const coconutJob = {
+      input: {
+        url: clipsUrls[0],
+      },
+      // THIS IS THE KEY FIX: Coconut requires a storage destination
+      storage: {
+        service: "coconut",
+      },
       notification: {
         type: "http",
         url: `${supabaseUrl}/functions/v1/coconut-webhook?projectId=${projectId}`,
       },
       outputs: {
         "mp4:1080x1920": {
-          key: outputFilename, // Providing a filename here often satisfies the output requirement
-          input: clipsUrls[0],
-          audio_source: musicUrl,
+          path: `/editlabs/${projectId}_${Date.now()}.mp4`,
           duration: beatData.totalDuration || 15,
-          video_filter: "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920",
+          video_filter: videoFilter,
+          ...(musicUrl && { audio_source: musicUrl }),
         },
       },
     };
 
-    if (beatData.segments?.length) {
-      const firstEffect = beatData.effectTimings?.[0];
-      if (firstEffect) {
-        const filter = getEffectFilter(firstEffect.effect, firstEffect.intensity, beatData.totalDuration);
-        coconutJob.outputs["mp4:1080x1920"].video_filter += `,${filter}`;
-      }
-    }
+    console.log("Coconut job config:", JSON.stringify(coconutJob, null, 2));
 
     const coconutResponse = await fetch("https://api.coconut.co/v2/jobs", {
       method: "POST",
@@ -115,6 +123,8 @@ Deno.serve(async (req) => {
     });
 
     const responseText = await coconutResponse.text();
+    console.log("Coconut API response:", responseText);
+    
     if (!coconutResponse.ok) {
       throw new Error(`Coconut API error: ${responseText}`);
     }
