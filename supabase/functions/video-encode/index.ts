@@ -44,7 +44,10 @@ Deno.serve(async (req) => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         project_id: projectId,
+        // Send both formats for compatibility
+        inputUrl: inputUrl,
         input_url: inputUrl,
+        musicUrl: musicUrl || null,
         music_url: musicUrl || null,
         effects: effects || ["zoom", "shake"],
         beat_data: {
