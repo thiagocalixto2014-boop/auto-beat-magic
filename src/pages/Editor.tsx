@@ -54,6 +54,48 @@ const Editor = () => {
     return () => subscription.unsubscribe();
   }, [navigate, projectId]);
 
+  // Poll project status every 3s while processing (max 5 minutes)
+  useEffect(() => {
+    if (!projectId) return;
+    if (step !== 3) return;
+    if (!project) return;
+    if (project.output_url) {
+      setStep(4);
+      return;
+    }
+    if (project.status !== "processing") return;
+
+    const startedAt = Date.now();
+    const interval = window.setInterval(async () => {
+      const elapsed = Date.now() - startedAt;
+      if (elapsed >= 5 * 60 * 1000) {
+        window.clearInterval(interval);
+        toast.error("Processing timed out (5 min). Try again.");
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from("projects")
+        .select("status, output_url")
+        .eq("id", projectId)
+        .maybeSingle();
+
+      if (error || !data) return;
+
+      setProject((prev) => (prev ? { ...prev, ...data } : prev));
+
+      if (data.output_url || data.status === "completed") {
+        window.clearInterval(interval);
+        setStep(4);
+      } else if (data.status === "failed") {
+        window.clearInterval(interval);
+        toast.error("Video processing failed. Please try again.");
+      }
+    }, 3000);
+
+    return () => window.clearInterval(interval);
+  }, [projectId, step, project, project?.status, project?.output_url]);
+
   const fetchProject = async () => {
     if (!projectId) return;
 
