@@ -20,60 +20,43 @@ Deno.serve(async (req) => {
 
     const body = await req.json();
     
-    console.log("=== COCONUT WEBHOOK ===");
+    console.log("=== VIDEO PROCESSOR WEBHOOK ===");
     console.log("Project ID:", projectId);
     console.log("Event:", body.event);
+    console.log("Status:", body.status);
     console.log("Full body:", JSON.stringify(body, null, 2));
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Coconut webhook events:
-    // - job.completed: All outputs are done
-    // - job.failed: Job failed
-    // - output.completed: Single output is done
+    // Edit Labs Video Processor webhook events:
+    // - job.completed: Processing is done
+    // - job.failed: Processing failed
 
-    if (body.event === "job.completed") {
+    if (body.event === "job.completed" || body.status === "completed") {
       console.log("Job completed successfully");
       
       let outputUrl = null;
       
-      // Try to find the output URL from various possible locations in the response
-      // Coconut can return URLs in different formats depending on the API version
+      // Extract output URL from Edit Labs Video Processor response
+      // The processor sends outputUrl directly or in outputs.mp4.url
       
-      // Check outputs array
-      if (body.outputs && Array.isArray(body.outputs)) {
-        for (const output of body.outputs) {
-          if (output.url) {
-            outputUrl = output.url;
-            break;
-          }
-          if (output.urls && output.urls.length > 0) {
-            outputUrl = output.urls[0];
-            break;
-          }
-        }
+      // Direct outputUrl field
+      if (body.outputUrl) {
+        outputUrl = body.outputUrl;
       }
       
-      // Check outputs object (keyed by format)
-      if (!outputUrl && body.outputs && typeof body.outputs === "object") {
-        for (const key of Object.keys(body.outputs)) {
-          const output = body.outputs[key];
-          if (output?.url) {
-            outputUrl = output.url;
-            break;
-          }
-        }
-      }
-
-      // Check data.outputs format
-      if (!outputUrl && body.data?.outputs) {
-        const outputs = body.data.outputs;
-        for (const key of Object.keys(outputs)) {
-          if (outputs[key]?.url) {
-            outputUrl = outputs[key].url;
-            break;
+      // Check outputs object
+      if (!outputUrl && body.outputs) {
+        if (body.outputs.mp4?.url) {
+          outputUrl = body.outputs.mp4.url;
+        } else if (typeof body.outputs === "object") {
+          for (const key of Object.keys(body.outputs)) {
+            if (body.outputs[key]?.url) {
+              outputUrl = body.outputs[key].url;
+              break;
+            }
           }
         }
       }
@@ -94,7 +77,7 @@ Deno.serve(async (req) => {
       } else {
         console.log("Project updated to completed with URL:", outputUrl);
       }
-    } else if (body.event === "job.failed" || body.status === "error") {
+    } else if (body.event === "job.failed" || body.status === "failed" || body.status === "error") {
       console.error("Job failed:", body.error || body.message);
 
       await supabase
@@ -104,9 +87,6 @@ Deno.serve(async (req) => {
           updated_at: new Date().toISOString(),
         })
         .eq("id", projectId);
-    } else if (body.event === "output.completed") {
-      console.log("Single output completed:", body.output);
-      // We'll wait for job.completed to finalize
     } else {
       console.log("Received event:", body.event);
     }

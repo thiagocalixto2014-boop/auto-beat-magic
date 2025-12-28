@@ -5,6 +5,9 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Edit Labs Video Processor Server
+const VIDEO_PROCESSOR_URL = "http://188.34.136.38/api/process";
+
 interface BeatData {
   bpm: number;
   totalDuration: number;
@@ -29,106 +32,84 @@ Deno.serve(async (req) => {
 
   try {
     const body: RequestBody = await req.json();
-    const { projectId, clipsUrls, musicUrl, beatData } = body;
+    const { projectId, clipsUrls, musicUrl, effects, beatData } = body;
 
     if (!projectId || !clipsUrls?.length) {
       throw new Error("Missing projectId or clipsUrls");
-    }
-
-    const COCONUT_API_KEY = Deno.env.get("COCONUT_API_KEY");
-    if (!COCONUT_API_KEY) {
-      throw new Error("COCONUT_API_KEY not configured");
     }
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+    // Update project status to processing
     await supabase
       .from("projects")
       .update({ status: "processing" })
       .eq("id", projectId);
 
-    // Build Coconut Job with CORRECT format based on official documentation
-    // https://docs.coconut.co/jobs/outputs-videos
-    // 
-    // Key insights from docs:
-    // 1. Storage "coconut" is for testing (24h availability)
-    // 2. "path" is REQUIRED for every output
-    // 3. Use "resolution" parameter for custom sizes like "1080x1920"
-    // 4. Use "fit": "crop" to avoid black bars
-    // 5. Format key should be simple like "mp4" with parameters inside
-    
-    const outputPath = `/editlabs/${projectId}_${Date.now()}.mp4`;
-    const duration = beatData?.totalDuration || 15;
+    console.log("=== SENDING TO EDIT LABS VIDEO PROCESSOR ===");
+    console.log("Project ID:", projectId);
+    console.log("Input URL:", clipsUrls[0]);
+    console.log("Effects:", effects);
+    console.log("Beat Data:", JSON.stringify(beatData, null, 2));
 
-    // Correct Coconut API v2 job configuration
-    const coconutJob = {
-      input: {
-        url: clipsUrls[0],
+    // Build webhook URL for the processor to call back
+    const webhookUrl = `${supabaseUrl}/functions/v1/coconut-webhook?projectId=${projectId}`;
+
+    // Send to our custom video processor server
+    const processorPayload = {
+      projectId,
+      inputUrl: clipsUrls[0],
+      musicUrl: musicUrl || null,
+      effects: effects || ["zoom", "shake"],
+      beatData: {
+        bpm: beatData?.bpm || 120,
+        totalDuration: beatData?.totalDuration || 15,
+        beats: beatData?.beats || [],
+        hardBeats: beatData?.hardBeats || [],
       },
-      storage: {
-        service: "coconut",
-      },
-      notification: {
-        type: "http",
-        url: `${supabaseUrl}/functions/v1/coconut-webhook?projectId=${projectId}`,
-      },
-      outputs: {
-        // Use simple format key "mp4" with parameters inside the object
-        "mp4": {
-          path: outputPath,
-          resolution: "1080x1920",  // 9:16 vertical format
-          fit: "crop",              // Crop to fit instead of padding
-          duration: duration,       // Max duration in seconds
-          quality: 4,               // Good quality (1-5 scale)
-        },
-      },
+      webhookUrl,
     };
 
-    console.log("=== COCONUT JOB CONFIG ===");
-    console.log(JSON.stringify(coconutJob, null, 2));
+    console.log("Processor payload:", JSON.stringify(processorPayload, null, 2));
 
-    const coconutResponse = await fetch("https://api.coconut.co/v2/jobs", {
+    const processorResponse = await fetch(VIDEO_PROCESSOR_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Basic ${btoa(COCONUT_API_KEY + ":")}`,
       },
-      body: JSON.stringify(coconutJob),
+      body: JSON.stringify(processorPayload),
     });
 
-    const responseText = await coconutResponse.text();
-    console.log("=== COCONUT API RESPONSE ===");
-    console.log(responseText);
-    
-    if (!coconutResponse.ok) {
-      throw new Error(`Coconut API error: ${responseText}`);
+    const responseText = await processorResponse.text();
+    console.log("=== VIDEO PROCESSOR RESPONSE ===");
+    console.log("Status:", processorResponse.status);
+    console.log("Response:", responseText);
+
+    if (!processorResponse.ok) {
+      throw new Error(`Video processor error: ${responseText}`);
     }
 
-    const coconutResult = JSON.parse(responseText);
+    const processorResult = JSON.parse(responseText);
 
-    // Store the job ID in the project for tracking
-    await supabase
-      .from("projects")
-      .update({ 
-        status: "processing",
-        // Store job ID if you have a field for it
-      })
-      .eq("id", projectId);
+    if (!processorResult.success) {
+      throw new Error(processorResult.error || "Video processing failed to start");
+    }
 
     return new Response(
       JSON.stringify({
         success: true,
-        jobId: coconutResult.id,
-        message: "Video encoding started with Coconut",
+        jobId: processorResult.jobId,
+        message: "Video processing started on Edit Labs server",
+        expectedOutput: processorResult.expectedOutput,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
     console.error("Error:", error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: error.message, success: false }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
