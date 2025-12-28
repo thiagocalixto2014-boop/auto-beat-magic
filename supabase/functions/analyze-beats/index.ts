@@ -196,7 +196,7 @@ IMPORTANT RULES:
       .from("projects")
       .update({
         beat_data: beatData,
-        status: "analyzed",
+        status: "processing",
       })
       .eq("id", projectId);
 
