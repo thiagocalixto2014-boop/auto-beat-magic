@@ -30,6 +30,7 @@ const Editor = () => {
   const [loading, setLoading] = useState(true);
   const [step, setStep] = useState(1);
   const [user, setUser] = useState<any>(null);
+  const [currentJobId, setCurrentJobId] = useState<string | null>(null);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -209,12 +210,14 @@ const Editor = () => {
               if (updates.output_url) setStep(4);
             }}
             onBack={() => setStep(2)}
+            onJobStarted={(jobId) => setCurrentJobId(jobId)}
           />
         )}
         {step === 4 && (
           <ExportStep
             project={project}
             onBack={() => setStep(3)}
+            jobId={currentJobId}
           />
         )}
       </main>

@@ -15,18 +15,20 @@ interface Project {
 interface ExportStepProps {
   project: Project;
   onBack: () => void;
+  jobId?: string | null;
 }
 
-const POLL_INTERVAL_MS = 3000;
+const POLL_INTERVAL_MS = 5000;
 const POLL_TIMEOUT_MS = 5 * 60 * 1000;
 
-export const ExportStep = ({ project, onBack }: ExportStepProps) => {
+export const ExportStep = ({ project, onBack, jobId }: ExportStepProps) => {
   const [videoError, setVideoError] = useState(false);
   const [outputUrl, setOutputUrl] = useState<string | null>(project.output_url);
   const [status, setStatus] = useState<string>(project.output_url ? "completed" : "processing");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [startedAt, setStartedAt] = useState<number>(() => Date.now());
   const [autoOpened, setAutoOpened] = useState(false);
+  const [progressInfo, setProgressInfo] = useState<string | null>(null);
 
   useEffect(() => {
     setOutputUrl(project.output_url);
@@ -35,12 +37,50 @@ export const ExportStep = ({ project, onBack }: ExportStepProps) => {
     setVideoError(false);
     setAutoOpened(false);
     setStartedAt(Date.now());
+    setProgressInfo(null);
   }, [project.id, project.output_url]);
 
-  // Polling every 3s + 5 min timeout
+  // Active polling - check status directly from the video processor
   useEffect(() => {
     if (outputUrl) return;
+    if (!jobId) return;
 
+    const checkStatus = async () => {
+      try {
+        console.log("Checking job status:", jobId);
+        
+        const { data, error } = await supabase.functions.invoke("check-video-status", {
+          body: { projectId: project.id, jobId },
+        });
+
+        if (error) {
+          console.error("Status check error:", error);
+          return;
+        }
+
+        console.log("Status check result:", data);
+
+        if (data.status === "completed" && data.outputUrl) {
+          setOutputUrl(data.outputUrl);
+          setStatus("completed");
+          setErrorMessage(null);
+          toast.success("Video ready!");
+        } else if (data.status === "failed") {
+          setStatus("failed");
+          setErrorMessage("Video processing failed. Please try again.");
+          toast.error("Processing failed. Try again.");
+        } else if (data.progress) {
+          setProgressInfo(data.progress);
+        }
+      } catch (err) {
+        console.error("Error checking status:", err);
+      }
+    };
+
+    // Check immediately
+    checkStatus();
+
+    // Then check every 5 seconds
     const interval = window.setInterval(async () => {
       const elapsed = Date.now() - startedAt;
       if (elapsed >= POLL_TIMEOUT_MS) {
@@ -51,27 +91,37 @@ export const ExportStep = ({ project, onBack }: ExportStepProps) => {
         return;
       }
 
+      await checkStatus();
+    }, POLL_INTERVAL_MS);
+
+    return () => window.clearInterval(interval);
+  }, [outputUrl, startedAt, project.id, jobId]);
+
+  // Fallback: Also check database directly
+  useEffect(() => {
+    if (outputUrl) return;
+
+    const interval = window.setInterval(async () => {
       const { data, error } = await supabase
         .from("projects")
         .select("status, output_url")
         .eq("id", project.id)
         .maybeSingle();
 
-      if (error) return;
-      if (!data) return;
-
-      setStatus(data.status);
+      if (error || !data) return;
 
       if (data.output_url) {
         setOutputUrl(data.output_url);
+        setStatus("completed");
         setErrorMessage(null);
       } else if (data.status === "failed") {
+        setStatus("failed");
         setErrorMessage("Video processing failed. Please try again.");
       }
     }, POLL_INTERVAL_MS);
 
     return () => window.clearInterval(interval);
-  }, [outputUrl, startedAt, project.id]);
+  }, [outputUrl, project.id]);
 
   // Auto-open once ready
   useEffect(() => {

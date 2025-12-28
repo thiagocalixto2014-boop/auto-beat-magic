@@ -31,6 +31,7 @@ interface GenerateStepProps {
   project: Project;
   onUpdate: (updates: Partial<Project>) => void;
   onBack: () => void;
+  onJobStarted?: (jobId: string) => void;
 }
 
 type UiPhase = "idle" | "upload" | "sending" | "processing" | "finalizing" | "ready" | "error";
@@ -40,7 +41,7 @@ const ESTIMATED_PROCESSING_MS = 2 * 60 * 1000;
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-export const GenerateStep = ({ project, onUpdate, onBack }: GenerateStepProps) => {
+export const GenerateStep = ({ project, onUpdate, onBack, onJobStarted }: GenerateStepProps) => {
   const [processing, setProcessing] = useState(false);
   const [uiPhase, setUiPhase] = useState<UiPhase>("idle");
   const [progress, setProgress] = useState(0);
@@ -206,6 +207,11 @@ export const GenerateStep = ({ project, onUpdate, onBack }: GenerateStepProps) =
 
       if (processError) throw new Error("Failed to start processing: " + processError.message);
       if (processResult?.error) throw new Error(processResult.error);
+
+      // Notify parent about the job ID for status polling
+      if (processResult?.jobId && onJobStarted) {
+        onJobStarted(processResult.jobId);
+      }
 
       setProgress(30);
       setUiPhase("processing");
