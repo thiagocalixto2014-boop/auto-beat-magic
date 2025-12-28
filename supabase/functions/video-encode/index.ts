@@ -37,17 +37,17 @@ Deno.serve(async (req) => {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        projectId,
-        inputUrl: clipsUrls[0],
-        musicUrl: musicUrl || null,
+        project_id: projectId,
+        video_url: clipsUrls[0],
+        music_url: musicUrl || null,
         effects: effects || ["zoom", "shake"],
-        beatData: {
+        beat_data: {
           bpm: beatData?.bpm || 120,
-          totalDuration: beatData?.totalDuration || 15,
+          total_duration: beatData?.totalDuration || 15,
           beats: beatData?.beats || [],
-          hardBeats: beatData?.hardBeats || [],
+          hard_beats: beatData?.hardBeats || [],
         },
-        webhookUrl,
+        webhook_url: webhookUrl,
       }),
     });
 
@@ -55,7 +55,8 @@ Deno.serve(async (req) => {
 
     console.log("Processor response:", processorResult);
 
-    if (!processorResponse.ok || !processorResult.success) {
+    // Check for error or failed status (processing/queued are valid)
+    if (!processorResponse.ok || processorResult.error) {
       throw new Error(processorResult.error || "Video processing failed");
     }
 
