@@ -149,7 +149,8 @@ function buildTransloaditSteps(
     // Step 3: Concatenate all segments
     const segmentRefs = beatData.segments.map((_, index) => ({
       name: `segment_${index}`,
-      as: "video",
+      // Transloadit expects ordered video_* inputs
+      as: `video_${index + 1}`,
     }));
 
     steps["concatenate"] = {
@@ -165,18 +166,13 @@ function buildTransloaditSteps(
     if (musicUrl) {
       steps["add_music"] = {
         robot: "/video/encode",
-        use: {
-          steps: [
-            { name: "concatenate", as: "video" },
-            { name: "import_music", as: "audio" },
-          ],
-        },
+        // Array order becomes FFmpeg input indices: 0 = video, 1 = audio
+        use: ["concatenate", "import_music"],
         preset: "iphone-high",
         ffmpeg_stack: "v6.0.0",
         ffmpeg: {
           t: beatData.totalDuration || 15,
           shortest: true,
-          "c:v": "copy",
           map: ["0:v:0", "1:a:0"],
         },
       };
@@ -199,17 +195,13 @@ function buildTransloaditSteps(
     if (musicUrl) {
       steps["add_music"] = {
         robot: "/video/encode",
-        use: {
-          steps: [
-            { name: "simple_encode", as: "video" },
-            { name: "import_music", as: "audio" },
-          ],
-        },
+        use: ["simple_encode", "import_music"],
         preset: "iphone-high",
         ffmpeg_stack: "v6.0.0",
         ffmpeg: {
           t: 15,
           shortest: true,
+          map: ["0:v:0", "1:a:0"],
         },
       };
     }

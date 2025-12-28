@@ -78,15 +78,19 @@ serve(async (req) => {
       }
     } else if (body.error) {
       console.error("Assembly error:", body.error, body.message);
-      
+
       if (projectId) {
-        await supabase
+        const { error: updateError } = await supabase
           .from("projects")
-          .update({ 
-            status: "error",
-            updated_at: new Date().toISOString()
+          .update({
+            status: "failed",
+            updated_at: new Date().toISOString(),
           })
           .eq("id", projectId);
+
+        if (updateError) {
+          console.error("Error marking project failed:", updateError);
+        }
       }
     }
 
