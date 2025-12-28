@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
@@ -15,7 +15,8 @@ import {
   AlertCircle, 
   Sparkles,
   Download,
-  ExternalLink
+  ExternalLink,
+  Video
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
@@ -36,6 +37,7 @@ interface ProjectCardProps {
 export const ProjectCard = ({ project, onDelete }: ProjectCardProps) => {
   const [deleting, setDeleting] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
+  const [videoError, setVideoError] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const navigate = useNavigate();
 
@@ -61,34 +63,25 @@ export const ProjectCard = ({ project, onDelete }: ProjectCardProps) => {
     }
   };
 
-  const handleDownload = async (e: React.MouseEvent) => {
+  const handleDownload = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!project.output_url) return;
+    
+    // Open in new tab - works even with HTTP URLs
+    window.open(project.output_url, "_blank");
+    toast.success("Opening video in new tab");
+  };
 
-    try {
-      toast.info("Starting download...");
-      const response = await fetch(project.output_url);
-      const blob = await response.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `${project.title || "video"}.mp4`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      toast.success("Download started!");
-    } catch (error) {
-      console.error("Download error:", error);
-      // Fallback: open in new tab
-      window.open(project.output_url, "_blank");
-    }
+  const handleOpenVideo = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!project.output_url) return;
+    window.open(project.output_url, "_blank");
   };
 
   const handleMouseEnter = () => {
     setIsHovered(true);
-    if (videoRef.current && project.output_url) {
-      videoRef.current.play().catch(() => {});
+    if (videoRef.current && project.output_url && !videoError) {
+      videoRef.current.play().catch(() => setVideoError(true));
     }
   };
 
@@ -147,6 +140,9 @@ export const ProjectCard = ({ project, onDelete }: ProjectCardProps) => {
   const isCompleted = project.status === "completed" && project.output_url;
   const isProcessing = project.status === "processing";
 
+  // Check if URL is HTTP (will be blocked on HTTPS sites)
+  const isHttpUrl = project.output_url?.startsWith("http://");
+
   return (
     <Card
       className="group overflow-hidden border-border/50 hover:border-purple-main/40 bg-card/80 backdrop-blur-sm transition-all duration-300 cursor-pointer hover:shadow-purple hover:-translate-y-1"
@@ -156,16 +152,34 @@ export const ProjectCard = ({ project, onDelete }: ProjectCardProps) => {
     >
       {/* Preview Area */}
       <div className={`aspect-video relative overflow-hidden bg-gradient-to-br ${templateGradients[project.template] || templateGradients.flashy}`}>
-        {isCompleted ? (
+        {isCompleted && !videoError && !isHttpUrl ? (
           <video
             ref={videoRef}
-            src={project.output_url}
+            src={project.output_url!}
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
             muted
             loop
             playsInline
             preload="metadata"
+            onError={() => setVideoError(true)}
           />
+        ) : isCompleted ? (
+          // Show placeholder for completed videos that can't preview (HTTP)
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
+            <div className="w-16 h-16 rounded-full bg-emerald-500/20 flex items-center justify-center">
+              <Video className="w-8 h-8 text-emerald-400" />
+            </div>
+            <span className="text-xs text-emerald-400/80 font-medium">Video Ready</span>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleOpenVideo}
+              className="text-xs border-emerald-400/30 text-emerald-400 hover:bg-emerald-400/10"
+            >
+              <ExternalLink className="w-3 h-3 mr-1" />
+              Open Video
+            </Button>
+          </div>
         ) : (
           <div className="absolute inset-0 flex items-center justify-center">
             {isProcessing ? (
@@ -183,11 +197,11 @@ export const ProjectCard = ({ project, onDelete }: ProjectCardProps) => {
         )}
 
         {/* Overlay gradient */}
-        <div className="absolute inset-0 bg-gradient-to-t from-card via-transparent to-transparent opacity-60" />
+        <div className="absolute inset-0 bg-gradient-to-t from-card via-transparent to-transparent opacity-60 pointer-events-none" />
 
-        {/* Play button overlay for completed videos */}
-        {isCompleted && (
-          <div className={`absolute inset-0 flex items-center justify-center transition-opacity duration-300 ${isHovered ? 'opacity-100' : 'opacity-0'}`}>
+        {/* Play button overlay for completed videos with working preview */}
+        {isCompleted && !videoError && !isHttpUrl && (
+          <div className={`absolute inset-0 flex items-center justify-center transition-opacity duration-300 pointer-events-none ${isHovered ? 'opacity-100' : 'opacity-0'}`}>
             <div className="bg-background/60 backdrop-blur-md rounded-full p-4 shadow-lg">
               <Play className="w-8 h-8 text-foreground fill-current" />
             </div>
@@ -259,7 +273,7 @@ export const ProjectCard = ({ project, onDelete }: ProjectCardProps) => {
             <Button
               variant="ghost"
               size="sm"
-              onClick={handleDownload}
+              onClick={handleOpenVideo}
               className="text-xs text-purple-light hover:text-purple-glow h-7 px-2 gap-1"
             >
               <ExternalLink className="w-3 h-3" />
