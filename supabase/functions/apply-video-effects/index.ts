@@ -94,17 +94,18 @@ function buildTransloaditSteps(
     };
   }
 
-  // Step 1: Resize all clips to phone format (9:16 vertical)
+  // Step 1: Normalize all clips to vertical 9:16 (1080x1920)
+  // We do this with explicit FFmpeg filters to avoid crop failures on landscape sources.
   clipsUrls.forEach((_, index) => {
     steps[`resize_${index}`] = {
       robot: "/video/encode",
       use: `import_clip_${index}`,
       preset: "iphone-high",
-      width: 1080,
-      height: 1920,
-      resize_strategy: "crop",
-      background: "#000000",
       ffmpeg_stack: "v6.0.0",
+      ffmpeg: {
+        // Scale up (if needed) then center-crop to exact 1080x1920.
+        vf: "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920",
+      },
     };
   });
 
@@ -129,9 +130,8 @@ function buildTransloaditSteps(
         }
       }
       
-      // Always ensure 9:16 output
-      ffmpegFilters.push("scale=1080:1920:force_original_aspect_ratio=decrease");
-      ffmpegFilters.push("pad=1080:1920:(ow-iw)/2:(oh-ih)/2:black");
+      // Resize step already enforces 1080x1920.
+
       
       steps[`segment_${index}`] = {
         robot: "/video/encode",
@@ -183,12 +183,12 @@ function buildTransloaditSteps(
     
     steps["simple_encode"] = {
       robot: "/video/encode",
-      use: "resize_0",
+      use: "import_clip_0",
       preset: "iphone-high",
       ffmpeg_stack: "v6.0.0",
       ffmpeg: {
         t: 15,
-        vf: "scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2:black",
+        vf: "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920",
       },
     };
 
