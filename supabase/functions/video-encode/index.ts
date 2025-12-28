@@ -44,16 +44,16 @@ Deno.serve(async (req) => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         project_id: projectId,
-        inputUrl: inputUrl,
-        musicUrl: musicUrl || null,
+        input_url: inputUrl,
+        music_url: musicUrl || null,
         effects: effects || ["zoom", "shake"],
-        beatData: {
+        beat_data: {
           bpm: beatData?.bpm || 120,
-          totalDuration: beatData?.totalDuration || 15,
+          total_duration: beatData?.totalDuration || 15,
           beats: beatData?.beats || [],
-          hardBeats: beatData?.hardBeats || [],
+          hard_beats: beatData?.hardBeats || [],
         },
-        webhookUrl: webhookUrl,
+        webhook_url: webhookUrl,
       }),
     });
 
