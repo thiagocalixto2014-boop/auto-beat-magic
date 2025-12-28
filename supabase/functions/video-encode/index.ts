@@ -27,7 +27,7 @@ Deno.serve(async (req) => {
 
     await supabase.from("projects").update({ status: "processing" }).eq("id", projectId);
 
-    const webhookUrl = `${supabaseUrl}/functions/v1/coconut-webhook?projectId=${projectId}`;
+    const webhookUrl = `${supabaseUrl}/functions/v1/video-webhook?projectId=${projectId}`;
 
     console.log("Sending to Edit Labs processor:", VIDEO_PROCESSOR_URL);
     console.log("Project ID:", projectId);

@@ -9,8 +9,8 @@ verify_jwt = false
 [functions.transloadit-webhook]
 verify_jwt = false
 
-[functions.coconut-encode]
+[functions.video-encode]
 verify_jwt = false
 
-[functions.coconut-webhook]
+[functions.video-webhook]
 verify_jwt = false
