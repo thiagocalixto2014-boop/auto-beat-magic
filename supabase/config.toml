@@ -8,3 +8,9 @@ verify_jwt = false
 
 [functions.transloadit-webhook]
 verify_jwt = false
+
+[functions.coconut-encode]
+verify_jwt = false
+
+[functions.coconut-webhook]
+verify_jwt = false

@@ -127,10 +127,10 @@ export const GenerateStep = ({ project, onUpdate, onBack }: GenerateStepProps) =
       // Step 2-3: Animate finding moments and syncing
       await animateProgress(2, 3);
 
-      // Step 4: Apply effects and render
-      toast.info("Processing video with beat-synced effects...");
+      // Step 4: Apply effects and render using Coconut.co
+      toast.info("Processing video with Coconut encoder...");
       
-      const { data: processResult, error: processError } = await supabase.functions.invoke("apply-video-effects", {
+      const { data: processResult, error: processError } = await supabase.functions.invoke("coconut-encode", {
         body: {
           projectId: project.id,
           clipsUrls: project.clips_urls,
