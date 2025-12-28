@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Plus, LogOut, Video, Loader2 } from "lucide-react";
+import { Plus, LogOut, Video, Loader2, RefreshCw, Sparkles } from "lucide-react";
 import { ProjectCard } from "@/components/dashboard/project-card";
 
 interface Project {
@@ -21,6 +21,7 @@ const Dashboard = () => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -46,7 +47,20 @@ const Dashboard = () => {
     return () => subscription.unsubscribe();
   }, [navigate]);
 
-  const fetchProjects = async () => {
+  // Auto-refresh for processing projects
+  useEffect(() => {
+    const hasProcessing = projects.some(p => p.status === "processing");
+    if (!hasProcessing) return;
+
+    const interval = setInterval(() => {
+      fetchProjects(true);
+    }, 10000); // Check every 10 seconds
+
+    return () => clearInterval(interval);
+  }, [projects]);
+
+  const fetchProjects = async (silent = false) => {
+    if (!silent) setLoading(true);
     try {
       const { data, error } = await supabase
         .from("projects")
@@ -56,13 +70,25 @@ const Dashboard = () => {
       if (error) throw error;
       setProjects(data || []);
     } catch (error: any) {
-      toast.error("Failed to load projects");
+      console.error("Fetch projects error:", error);
+      if (!silent) toast.error("Failed to load projects");
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
+  const handleRefresh = () => {
+    setRefreshing(true);
+    fetchProjects();
+  };
+
   const createNewProject = async () => {
+    if (!user) {
+      toast.error("Please sign in to create a project");
+      return;
+    }
+
     setCreating(true);
     try {
       const { data, error } = await supabase
@@ -75,8 +101,11 @@ const Dashboard = () => {
         .single();
 
       if (error) throw error;
+      
+      toast.success("Project created!");
       navigate(`/editor/${data.id}`);
     } catch (error: any) {
+      console.error("Create project error:", error);
       toast.error("Failed to create project");
     } finally {
       setCreating(false);
@@ -84,14 +113,26 @@ const Dashboard = () => {
   };
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    navigate("/");
+    try {
+      await supabase.auth.signOut();
+      navigate("/");
+    } catch (error) {
+      console.error("Sign out error:", error);
+      toast.error("Failed to sign out");
+    }
   };
+
+  const completedCount = projects.filter(p => p.status === "completed").length;
+  const processingCount = projects.filter(p => p.status === "processing").length;
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-purple-light" />
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-background">
+        <div className="relative">
+          <div className="w-16 h-16 rounded-full border-2 border-purple-main/30 border-t-purple-light animate-spin" />
+          <Sparkles className="w-6 h-6 text-purple-light absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+        </div>
+        <p className="text-muted-foreground text-sm">Loading your projects...</p>
       </div>
     );
   }
@@ -99,21 +140,43 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="border-b border-border bg-card/50">
+      <header className="sticky top-0 z-50 border-b border-border/50 bg-card/80 backdrop-blur-md">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="text-xl font-bold">
-            <span className="bg-gradient-purple bg-clip-text text-transparent">EDIT</span>
-            <span>LABS</span>
+          <div className="flex items-center gap-3">
+            <div className="text-xl font-bold tracking-tight">
+              <span className="bg-gradient-purple bg-clip-text text-transparent">EDIT</span>
+              <span className="text-foreground">LABS</span>
+            </div>
+            {processingCount > 0 && (
+              <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-purple-main/10 border border-purple-main/20">
+                <Loader2 className="w-3 h-3 animate-spin text-purple-light" />
+                <span className="text-xs text-purple-light font-medium">
+                  {processingCount} processing
+                </span>
+              </div>
+            )}
           </div>
-          <div className="flex items-center gap-4">
-            <span className="text-sm text-muted-foreground hidden sm:block">
+          
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-muted-foreground hidden md:block max-w-[200px] truncate">
               {user?.email}
             </span>
             <Button
               variant="ghost"
               size="icon"
+              onClick={handleRefresh}
+              disabled={refreshing}
+              className="text-muted-foreground hover:text-foreground"
+              title="Refresh projects"
+            >
+              <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
               onClick={handleSignOut}
               className="text-muted-foreground hover:text-foreground"
+              title="Sign out"
             >
               <LogOut className="w-5 h-5" />
             </Button>
@@ -123,17 +186,25 @@ const Dashboard = () => {
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
-        <div className="flex items-center justify-between mb-8">
+        {/* Stats & Header */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
           <div>
-            <h1 className="text-3xl font-bold mb-2">Your Projects</h1>
+            <h1 className="text-3xl md:text-4xl font-bold mb-2 tracking-tight">
+              Your Projects
+            </h1>
             <p className="text-muted-foreground">
-              Create AI-powered video edits in minutes
+              {projects.length === 0 
+                ? "Create your first AI-powered video edit"
+                : `${projects.length} project${projects.length !== 1 ? 's' : ''} • ${completedCount} completed`
+              }
             </p>
           </div>
+          
           <Button
             onClick={createNewProject}
             disabled={creating}
-            className="bg-gradient-purple hover:opacity-90 gap-2"
+            size="lg"
+            className="bg-gradient-purple hover:opacity-90 transition-opacity gap-2 shadow-purple"
           >
             {creating ? (
               <Loader2 className="w-4 h-4 animate-spin" />
@@ -144,23 +215,35 @@ const Dashboard = () => {
           </Button>
         </div>
 
+        {/* Empty State */}
         {projects.length === 0 ? (
-          <Card className="p-12 text-center bg-card/50 border-dashed border-purple-main/20">
-            <Video className="w-16 h-16 text-purple-main/30 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold mb-2">No projects yet</h3>
-            <p className="text-muted-foreground mb-6">
-              Create your first AI-powered video edit
-            </p>
-            <Button
-              onClick={createNewProject}
-              disabled={creating}
-              className="bg-gradient-purple hover:opacity-90"
-            >
-              Create Your First Edit
-            </Button>
+          <Card className="p-16 text-center bg-card/50 border-dashed border-purple-main/20 hover:border-purple-main/40 transition-colors">
+            <div className="max-w-sm mx-auto">
+              <div className="w-20 h-20 rounded-full bg-gradient-purple/10 flex items-center justify-center mx-auto mb-6">
+                <Video className="w-10 h-10 text-purple-main/50" />
+              </div>
+              <h3 className="text-xl font-semibold mb-2">No projects yet</h3>
+              <p className="text-muted-foreground mb-8">
+                Start by creating your first AI-powered video edit. Upload your clips, add music, and let AI do the magic.
+              </p>
+              <Button
+                onClick={createNewProject}
+                disabled={creating}
+                size="lg"
+                className="bg-gradient-purple hover:opacity-90 transition-opacity shadow-purple"
+              >
+                {creating ? (
+                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                ) : (
+                  <Sparkles className="w-4 h-4 mr-2" />
+                )}
+                Create Your First Edit
+              </Button>
+            </div>
           </Card>
         ) : (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          /* Projects Grid */
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {projects.map((project) => (
               <ProjectCard
                 key={project.id}
@@ -171,6 +254,16 @@ const Dashboard = () => {
           </div>
         )}
       </main>
+
+      {/* Footer */}
+      <footer className="border-t border-border/30 mt-auto">
+        <div className="container mx-auto px-4 py-6 text-center text-sm text-muted-foreground">
+          <p>
+            <span className="bg-gradient-purple bg-clip-text text-transparent font-medium">EDITLABS</span>
+            {" "}• AI-Powered Video Editing
+          </p>
+        </div>
+      </footer>
     </div>
   );
 };
