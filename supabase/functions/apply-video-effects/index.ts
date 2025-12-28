@@ -1,6 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import * as crypto from "https://deno.land/std@0.168.0/crypto/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -24,22 +23,23 @@ interface ProcessRequest {
   beatData: BeatData;
 }
 
-// Generate Transloadit signature
+// Generate Transloadit signature using HMAC-SHA384
 async function generateSignature(params: Record<string, unknown>, authSecret: string): Promise<string> {
   const paramsString = JSON.stringify(params);
   const encoder = new TextEncoder();
-  const key = encoder.encode(authSecret);
+  const keyData = encoder.encode(authSecret);
   const data = encoder.encode(paramsString);
   
-  const cryptoKey = await crypto.subtle.importKey(
+  // Use the global Web Crypto API available in Deno
+  const key = await globalThis.crypto.subtle.importKey(
     "raw",
-    key,
+    keyData,
     { name: "HMAC", hash: "SHA-384" },
     false,
     ["sign"]
   );
   
-  const signature = await crypto.subtle.sign("HMAC", cryptoKey, data);
+  const signature = await globalThis.crypto.subtle.sign("HMAC", key, data);
   const hashArray = Array.from(new Uint8Array(signature));
   return "sha384:" + hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
 }
