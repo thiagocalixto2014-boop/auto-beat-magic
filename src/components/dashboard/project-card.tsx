@@ -182,14 +182,14 @@ export const ProjectCard = ({ project, onDelete }: ProjectCardProps) => {
           <Skeleton className="absolute inset-0 bg-muted/50" />
         )}
 
-        {/* Single optimized video element */}
+        {/* Single optimized video element - with reduced opacity and blur */}
         {isVisible && displayUrl && (
           <video
             ref={videoRef}
             src={displayUrl}
-            className={`absolute inset-0 w-full h-full object-cover transition-all duration-500 ${
-              thumbnailLoaded ? 'opacity-100' : 'opacity-0'
-            } ${isHovered ? 'scale-105' : 'scale-100'}`}
+            className={`absolute inset-0 w-full h-full object-cover transition-all duration-500 blur-[2px] ${
+              thumbnailLoaded ? 'opacity-60' : 'opacity-0'
+            } ${isHovered ? 'scale-110 blur-0 opacity-80' : 'scale-105'}`}
             muted
             loop
             playsInline
@@ -197,6 +197,25 @@ export const ProjectCard = ({ project, onDelete }: ProjectCardProps) => {
             onLoadedData={() => setThumbnailLoaded(true)}
           />
         )}
+
+        {/* Dark overlay */}
+        <div className="absolute inset-0 bg-background/30" />
+
+        {/* Inner glow effect */}
+        <div className="absolute inset-0 pointer-events-none">
+          {/* Top inner glow */}
+          <div className="absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-purple-main/20 to-transparent" />
+          {/* Bottom inner glow */}
+          <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-purple-glow/25 to-transparent" />
+          {/* Left inner glow */}
+          <div className="absolute inset-y-0 left-0 w-12 bg-gradient-to-r from-violet/15 to-transparent" />
+          {/* Right inner glow */}
+          <div className="absolute inset-y-0 right-0 w-12 bg-gradient-to-l from-magenta/15 to-transparent" />
+          {/* Center radial glow */}
+          <div className="absolute inset-0 bg-radial-glow opacity-40" style={{
+            background: 'radial-gradient(ellipse at center, hsl(270 70% 55% / 0.15) 0%, transparent 70%)'
+          }} />
+        </div>
 
         {/* Processing overlay */}
         {isProcessing && (
