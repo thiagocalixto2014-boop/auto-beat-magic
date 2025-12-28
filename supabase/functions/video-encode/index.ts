@@ -29,25 +29,31 @@ Deno.serve(async (req) => {
 
     const webhookUrl = `${supabaseUrl}/functions/v1/video-webhook?projectId=${projectId}`;
 
+    const inputUrl = clipsUrls[0];
+    
     console.log("Sending to Edit Labs processor:", VIDEO_PROCESSOR_URL);
     console.log("Project ID:", projectId);
-    console.log("Input URL:", clipsUrls[0]);
+    console.log("Input URL:", inputUrl);
+
+    if (!inputUrl) {
+      throw new Error("No video URL available in clipsUrls");
+    }
 
     const processorResponse = await fetch(VIDEO_PROCESSOR_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         project_id: projectId,
-        video_url: clipsUrls[0],
-        music_url: musicUrl || null,
+        inputUrl: inputUrl,
+        musicUrl: musicUrl || null,
         effects: effects || ["zoom", "shake"],
-        beat_data: {
+        beatData: {
           bpm: beatData?.bpm || 120,
-          total_duration: beatData?.totalDuration || 15,
+          totalDuration: beatData?.totalDuration || 15,
           beats: beatData?.beats || [],
-          hard_beats: beatData?.hardBeats || [],
+          hardBeats: beatData?.hardBeats || [],
         },
-        webhook_url: webhookUrl,
+        webhookUrl: webhookUrl,
       }),
     });
 
