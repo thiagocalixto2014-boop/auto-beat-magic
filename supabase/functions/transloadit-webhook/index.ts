@@ -16,7 +16,30 @@ serve(async (req) => {
     const url = new URL(req.url);
     const projectId = url.searchParams.get("projectId");
     
-    const body = await req.json();
+    // Transloadit sends form-urlencoded data, not JSON
+    const contentType = req.headers.get("content-type") || "";
+    let body: Record<string, unknown>;
+    
+    if (contentType.includes("application/x-www-form-urlencoded")) {
+      const formData = await req.formData();
+      const transloaditData = formData.get("transloadit");
+      if (typeof transloaditData === "string") {
+        body = JSON.parse(transloaditData);
+      } else {
+        throw new Error("No transloadit data in form");
+      }
+    } else if (contentType.includes("application/json")) {
+      body = await req.json();
+    } else {
+      // Try to parse as text and handle both formats
+      const text = await req.text();
+      if (text.startsWith("transloadit=")) {
+        const decoded = decodeURIComponent(text.replace("transloadit=", ""));
+        body = JSON.parse(decoded);
+      } else {
+        body = JSON.parse(text);
+      }
+    }
     
     console.log("Transloadit webhook received:", {
       projectId,
@@ -29,9 +52,10 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    if (body.ok === "ASSEMBLY_COMPLETED" && body.results?.exported) {
+    if (body.ok === "ASSEMBLY_COMPLETED" && body.results) {
       // Get the output URL from the exported results
-      const exportedFile = body.results.exported[0];
+      const results = body.results as Record<string, Array<{ ssl_url?: string; url?: string }>>;
+      const exportedFile = results.exported?.[0];
       const outputUrl = exportedFile?.ssl_url || exportedFile?.url;
 
       console.log("Assembly completed, output URL:", outputUrl);
