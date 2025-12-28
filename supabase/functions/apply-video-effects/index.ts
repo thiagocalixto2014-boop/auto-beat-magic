@@ -44,36 +44,39 @@ async function generateSignature(params: Record<string, unknown>, authSecret: st
 }
 
 /**
- * Professional Effect Filters
+ * Professional TikTok-Style Effect Filters
  * 
- * Zoom: Uses exponential easing (zoompan) for a "perfect" smooth zoom.
- * Shake: Uses a more complex sine-based movement for a professional look.
- * Motion Blur: Simulated via boxblur during high-velocity moments.
+ * Zoom: Uses a more aggressive exponential easing for that "pop" effect.
+ * Shake: Uses a high-frequency sine wave with decay for impact.
+ * 9:16 Formatting: Ensures everything is perfectly centered and scaled for mobile.
  */
 function getEffectFilter(effect: string, intensity: number, duration: number): string {
-  const normalized = intensity / 10; // 0 to 1
-  const frames = Math.max(1, Math.round(duration * 30)); // Assume 30fps for calculation
+  const normalized = intensity / 10;
+  const frames = Math.max(1, Math.round(duration * 30));
   
   switch (effect) {
     case "zoom":
     case "smooth-zoom":
-      // Professional Zoom: Starts fast, slows down (exponential easing)
-      // zoompan=z='min(zoom+0.0015*intensity,1.5)':d=duration*fps:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)'
-      const maxZoom = 1 + (0.4 * normalized);
-      return `zoompan=z='min(zoom+${0.002 * intensity},${maxZoom})':d=${frames}:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=1080x1920`;
+    case "perfect-zoom":
+      // Aggressive TikTok Zoom: Starts with a "pop" and eases out
+      const zoomStart = 1.0;
+      const zoomEnd = 1.0 + (0.5 * normalized);
+      // zoompan=z='zoom+0.01':d=frames:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=1080x1920
+      return `zoompan=z='min(zoom+${0.005 * intensity},${zoomEnd})':d=${frames}:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=1080x1920`;
     
     case "shake":
-    case "shake-heavy":
-      // Professional Shake: Sine-based displacement with decay
-      const amplitude = (effect === "shake-heavy" ? 40 : 20) * normalized;
-      return `crop=iw-${amplitude}:ih-${amplitude}:${amplitude/2}+${amplitude/2}*sin(2*PI*t*15):${amplitude/2}+${amplitude/2}*cos(2*PI*t*18),scale=1080:1920`;
+    case "impact-shake":
+      // High-energy TikTok Shake: Rapid movement that decays
+      const amp = 30 * normalized;
+      return `crop=iw-${amp}:ih-${amp}:${amp/2}+${amp/2}*sin(2*PI*t*20):${amp/2}+${amp/2}*cos(2*PI*t*25),scale=1080:1920`;
     
     case "flash":
-      // Professional Flash: Quick brightness spike that decays
-      return `eq=brightness='if(lt(t,0.1),${0.5 * normalized}*(1-t/0.1),0)'`;
+      // White flash transition
+      return `eq=brightness='if(lt(t,0.15),${0.6 * normalized}*(1-t/0.15),0)'`;
       
     default:
-      return "";
+      // Subtle constant zoom to keep the video "alive"
+      return `zoompan=z='zoom+0.001':d=${frames}:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=1080x1920`;
   }
 }
 
@@ -85,7 +88,6 @@ function buildTransloaditSteps(
 ) {
   const steps: Record<string, unknown> = {};
 
-  // Import all source clips
   clipsUrls.forEach((url, index) => {
     steps[`import_clip_${index}`] = {
       robot: "/http/import",
@@ -93,7 +95,6 @@ function buildTransloaditSteps(
     };
   });
 
-  // Import music if provided
   if (musicUrl) {
     steps["import_music"] = {
       robot: "/http/import",
@@ -101,7 +102,7 @@ function buildTransloaditSteps(
     };
   }
 
-  // Step 1: Normalize all clips to vertical 9:16 (1080x1920)
+  // Step 1: Force 9:16 (1080x1920) for all clips
   clipsUrls.forEach((_, index) => {
     steps[`resize_${index}`] = {
       robot: "/video/encode",
@@ -114,7 +115,7 @@ function buildTransloaditSteps(
     };
   });
 
-  // Step 2: Cut segments and apply professional effects
+  // Step 2: Apply professional cuts and effects
   if (beatData.segments && beatData.segments.length > 0) {
     beatData.segments.forEach((segment, index) => {
       const clipIndex = segment.clipIndex % clipsUrls.length;
@@ -125,14 +126,8 @@ function buildTransloaditSteps(
       );
 
       const ffmpegFilters: string[] = [];
-
-      if (effectTiming) {
-        const filter = getEffectFilter(effectTiming.effect, effectTiming.intensity, duration);
-        if (filter) ffmpegFilters.push(filter);
-      } else {
-        // Default subtle zoom for "amateur" feel prevention
-        ffmpegFilters.push(`zoompan=z='zoom+0.0005':d=${Math.round(duration * 30)}:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=1080x1920`);
-      }
+      const filter = getEffectFilter(effectTiming?.effect || "default", effectTiming?.intensity || 5, duration);
+      if (filter) ffmpegFilters.push(filter);
 
       steps[`segment_${index}`] = {
         robot: "/video/encode",
@@ -147,7 +142,6 @@ function buildTransloaditSteps(
       };
     });
 
-    // Step 3: Concatenate all segments
     const segmentRefs = beatData.segments.map((_, index) => ({
       name: `segment_${index}`,
       as: `video_${index + 1}`,
@@ -162,7 +156,6 @@ function buildTransloaditSteps(
       ffmpeg_stack: "v6.0.0",
     };
 
-    // Step 4: Add music track
     if (musicUrl) {
       steps["add_music"] = {
         robot: "/video/merge",
@@ -258,7 +251,7 @@ serve(async (req) => {
         success: true,
         assemblyId: result.assembly_id,
         assemblyUrl: result.assembly_ssl_url,
-        message: `Processing with professional effects: ${beatData.segments?.length || 0} segments`,
+        message: `Processing TikTok-style edit: ${beatData.segments?.length || 0} cuts`,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
