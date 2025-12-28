@@ -37,7 +37,7 @@ const processingSteps = [
   { id: "analyzing", label: "Analyzing music BPM & beats", icon: AudioWaveform, progress: 20 },
   { id: "detecting", label: "Finding best clip moments", icon: Zap, progress: 40 },
   { id: "syncing", label: "Syncing cuts to beat drops", icon: Music, progress: 60 },
-  { id: "effects", label: "Applying effects on hard beats", icon: Sparkles, progress: 80 },
+  { id: "effects", label: "Applying professional effects", icon: Sparkles, progress: 80 },
   { id: "rendering", label: "Rendering 9:16 phone format", icon: Video, progress: 100 },
 ];
 
@@ -76,16 +76,9 @@ export const GenerateStep = ({ project, onUpdate, onBack }: GenerateStepProps) =
     setCurrentStep(0);
     
     try {
-      // Validate inputs
       if (!project.clips_urls || project.clips_urls.length === 0) {
         throw new Error("No video clips uploaded");
       }
-
-      console.log("Starting AI beat-synced video generation...");
-      console.log("Project:", project.id);
-      console.log("Clips:", project.clips_urls.length);
-      console.log("Music:", project.music_url ? "Yes" : "No");
-      console.log("Effects:", project.effects);
 
       // Step 1: Analyze beats with AI
       toast.info("Analyzing music beats with AI...");
@@ -102,23 +95,12 @@ export const GenerateStep = ({ project, onUpdate, onBack }: GenerateStepProps) =
         },
       });
 
-      if (beatError) {
-        console.error("Beat analysis error:", beatError);
-        throw new Error("Failed to analyze beats: " + beatError.message);
-      }
+      if (beatError) throw new Error("Failed to analyze beats: " + beatError.message);
+      if (!beatAnalysis?.success) throw new Error(beatAnalysis?.error || "Beat analysis failed");
 
-      if (!beatAnalysis?.success) {
-        throw new Error(beatAnalysis?.error || "Beat analysis failed");
-      }
-
-      console.log("Beat analysis complete:", beatAnalysis);
-      
       const beatData = beatAnalysis.beatData as BeatData;
       setBeatInfo(`${beatData.bpm} BPM • ${beatData.beats?.length || 0} beats • ${beatData.segments?.length || 0} cuts`);
       
-      toast.success(`Detected ${beatData.bpm} BPM with ${beatData.hardBeats?.length || 0} hard beats`);
-
-      // Update local state with beat data
       onUpdate({ 
         beat_data: beatData,
         status: "analyzed" 
@@ -127,10 +109,10 @@ export const GenerateStep = ({ project, onUpdate, onBack }: GenerateStepProps) =
       // Step 2-3: Animate finding moments and syncing
       await animateProgress(2, 3);
 
-      // Step 4: Apply effects and render using Coconut.co
-      toast.info("Processing video with Coconut encoder...");
+      // Step 4: Apply professional effects and render using Transloadit
+      toast.info("Applying professional effects...");
       
-      const { data: processResult, error: processError } = await supabase.functions.invoke("coconut-encode", {
+      const { data: processResult, error: processError } = await supabase.functions.invoke("apply-video-effects", {
         body: {
           projectId: project.id,
           clipsUrls: project.clips_urls,
@@ -140,23 +122,13 @@ export const GenerateStep = ({ project, onUpdate, onBack }: GenerateStepProps) =
         },
       });
 
-      if (processError) {
-        console.error("Processing error:", processError);
-        throw new Error("Failed to process video: " + processError.message);
-      }
+      if (processError) throw new Error("Failed to process video: " + processError.message);
+      if (!processResult?.success) throw new Error(processResult?.error || "Video processing failed");
 
-      if (!processResult?.success) {
-        throw new Error(processResult?.error || "Video processing failed");
-      }
-
-      console.log("Processing started:", processResult);
-      
       // Animate remaining progress
       await animateProgress(4, 4);
 
       toast.success("Video processing started! This may take a few minutes.");
-      toast.info(processResult.message);
-
       onUpdate({ status: "processing" });
 
     } catch (error: any) {
@@ -186,7 +158,6 @@ export const GenerateStep = ({ project, onUpdate, onBack }: GenerateStepProps) =
       {processing ? (
         <Card className="p-8 bg-card/60 border-purple-main/20">
           <div className="space-y-6">
-            {/* Progress bar */}
             <div className="space-y-2">
               <Progress value={progress} className="h-2" />
               <p className="text-sm text-muted-foreground text-center">
@@ -194,7 +165,6 @@ export const GenerateStep = ({ project, onUpdate, onBack }: GenerateStepProps) =
               </p>
             </div>
 
-            {/* Steps */}
             <div className="space-y-3">
               {processingSteps.map((step, index) => {
                 const isActive = index === currentStep;
