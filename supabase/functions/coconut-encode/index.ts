@@ -43,51 +43,6 @@ function getEffectFilter(effect: string, intensity: number = 5): string {
   }
 }
 
-// Build FFmpeg filter complex for beat-synced editing
-function buildFFmpegCommand(
-  beatData: BeatData,
-  effects: string[],
-  totalDuration: number
-): string {
-  if (!beatData.segments?.length) {
-    // Simple encode without beat sync
-    return `scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920`;
-  }
-
-  const filters: string[] = [];
-  const segments = beatData.segments;
-  const effectTimings = beatData.effectTimings || [];
-
-  // Create trim filters for each segment
-  segments.forEach((segment, i) => {
-    const duration = segment.end - segment.start;
-    let segmentFilter = `[0:v]trim=start=0:duration=${duration},setpts=PTS-STARTPTS`;
-
-    // Check if this segment has an effect timing
-    const effectTiming = effectTimings.find(
-      (e) => e.time >= segment.start && e.time < segment.end
-    );
-
-    if (effectTiming && effects.includes(effectTiming.effect)) {
-      const filter = getEffectFilter(effectTiming.effect, effectTiming.intensity);
-      if (filter) {
-        segmentFilter += `,${filter}`;
-      }
-    }
-
-    // Add resize/crop for vertical format
-    segmentFilter += `,scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920`;
-    segmentFilter += `[v${i}]`;
-    filters.push(segmentFilter);
-  });
-
-  // Concatenate all segments
-  const concatInputs = segments.map((_, i) => `[v${i}]`).join("");
-  filters.push(`${concatInputs}concat=n=${segments.length}:v=1:a=0[outv]`);
-
-  return filters.join("; ");
-}
-
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -128,81 +83,56 @@ Deno.serve(async (req) => {
     const totalDuration = beatData?.totalDuration || 15;
     const mainClipUrl = clipsUrls[0];
 
-    // Build the Coconut job configuration
-    // Using simple approach first - concatenation will be done via filter_complex if needed
-    const outputs: Record<string, string> = {};
-    
-    // Output to Supabase Storage via signed URL or direct public bucket
-    const outputFileName = `${projectId}_${Date.now()}.mp4`;
-    const outputPath = `outputs/${outputFileName}`;
-    
-    // For now, use Coconut's S3-compatible upload or HTTP upload
-    // We'll use a webhook to get the result URL
-    const outputUrl = `https://ffzrezqwdlafysmhlzwq.supabase.co/storage/v1/object/public/outputs/${outputFileName}`;
-
-    // Build FFmpeg filter for effects
+    // Build FFmpeg video filter for effects
     let videoFilter = "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920";
     
-    if (beatData?.segments?.length && beatData?.effectTimings?.length) {
-      // For beat-synced edits, we need to apply effects at specific times
-      // Coconut supports filter_complex for advanced processing
-      const effectFilters: string[] = [];
-      
-      beatData.effectTimings.forEach((timing) => {
-        if (effects.includes(timing.effect)) {
-          const filter = getEffectFilter(timing.effect, timing.intensity);
-          if (filter) {
-            effectFilters.push(filter);
-          }
+    if (beatData?.effectTimings?.length && effects?.length) {
+      // Apply first effect filter for simplicity
+      const firstEffect = beatData.effectTimings[0];
+      if (effects.includes(firstEffect.effect)) {
+        const filter = getEffectFilter(firstEffect.effect, firstEffect.intensity);
+        if (filter) {
+          videoFilter = `${videoFilter},${filter}`;
         }
-      });
-      
-      if (effectFilters.length > 0) {
-        // Apply first effect filter (simplified - Coconut handles complex filter graphs)
-        videoFilter = `${videoFilter},${effectFilters[0]}`;
       }
     }
 
-    // Coconut job configuration
-    // Reference: https://docs.coconut.co/
+    // Build Coconut job configuration
+    // Reference: https://docs.coconut.co/api-reference/v2/jobs
     const coconutJob: Record<string, unknown> = {
       input: {
         url: mainClipUrl,
-      },
-      outputs: {
-        // mp4 output with vertical format (1080x1920)
-        "mp4:1080x1920": {
-          url: `${supabaseUrl}/storage/v1/object/outputs/${outputFileName}`,
-          // Use webhook for delivery notification
-          key: "video_output",
-          duration: totalDuration,
-          video_filters: videoFilter,
-        },
       },
       notification: {
         type: "http",
         url: `${supabaseUrl}/functions/v1/coconut-webhook?projectId=${projectId}`,
       },
+      outputs: {},
     };
 
-    // If we have music, add audio input
+    // Configure output based on whether we have music
     if (musicUrl) {
-      coconutJob.inputs = {
-        video: { url: mainClipUrl },
-        audio: { url: musicUrl },
-      };
-      delete coconutJob.input;
-      
-      // Update output to merge audio
+      // With music: use audio_source to merge audio
       (coconutJob.outputs as Record<string, unknown>)["mp4:1080x1920"] = {
-        ...((coconutJob.outputs as Record<string, unknown>)["mp4:1080x1920"] as Record<string, unknown>),
-        audio: "audio", // Use the audio input
+        duration: totalDuration,
+        audio_source: musicUrl,
+        ffmpeg: {
+          vf: videoFilter,
+        },
+      };
+    } else {
+      // Without music: simple video encode
+      (coconutJob.outputs as Record<string, unknown>)["mp4:1080x1920"] = {
+        duration: totalDuration,
+        ffmpeg: {
+          vf: videoFilter,
+        },
       };
     }
 
     console.log("Coconut job config:", JSON.stringify(coconutJob, null, 2));
 
-    // Submit job to Coconut API
+    // Submit job to Coconut API v2
     const coconutResponse = await fetch("https://api.coconut.co/v2/jobs", {
       method: "POST",
       headers: {
@@ -212,26 +142,29 @@ Deno.serve(async (req) => {
       body: JSON.stringify(coconutJob),
     });
 
+    const responseText = await coconutResponse.text();
+    console.log("Coconut API response status:", coconutResponse.status);
+    console.log("Coconut API response:", responseText);
+
     if (!coconutResponse.ok) {
-      const errorText = await coconutResponse.text();
-      console.error("Coconut API error:", errorText);
+      console.error("Coconut API error:", responseText);
       
       await supabase
         .from("projects")
         .update({ status: "failed" })
         .eq("id", projectId);
         
-      throw new Error(`Coconut API error: ${errorText}`);
+      throw new Error(`Coconut API error: ${responseText}`);
     }
 
-    const coconutResult = await coconutResponse.json();
+    const coconutResult = JSON.parse(responseText);
     console.log("Coconut job created:", coconutResult.id);
 
     return new Response(
       JSON.stringify({
         success: true,
         jobId: coconutResult.id,
-        message: "Video encoding started",
+        message: "Video encoding started with Coconut",
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
