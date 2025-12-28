@@ -109,10 +109,10 @@ export const GenerateStep = ({ project, onUpdate, onBack }: GenerateStepProps) =
       // Step 2-3: Animate finding moments and syncing
       await animateProgress(2, 3);
 
-      // Step 4: Apply professional effects and render using Transloadit
-      toast.info("Applying professional effects...");
+      // Step 4: Apply professional effects and render using Coconut
+      toast.info("Applying professional effects with Coconut...");
       
-      const { data: processResult, error: processError } = await supabase.functions.invoke("apply-video-effects", {
+      const { data: processResult, error: processError } = await supabase.functions.invoke("coconut-encode", {
         body: {
           projectId: project.id,
           clipsUrls: project.clips_urls,
@@ -128,7 +128,7 @@ export const GenerateStep = ({ project, onUpdate, onBack }: GenerateStepProps) =
       // Animate remaining progress
       await animateProgress(4, 4);
 
-      toast.success("Video processing started! This may take a few minutes.");
+      toast.success("Video processing started with Coconut! This may take a few minutes.");
       onUpdate({ status: "processing" });
 
     } catch (error: any) {
