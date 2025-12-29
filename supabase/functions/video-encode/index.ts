@@ -44,7 +44,6 @@ Deno.serve(async (req) => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         project_id: projectId,
-        // Send both formats for compatibility
         inputUrl: inputUrl,
         input_url: inputUrl,
         musicUrl: musicUrl || null,
@@ -60,13 +59,27 @@ Deno.serve(async (req) => {
       }),
     });
 
-    const processorResult = await processorResponse.json();
+    console.log("Processor response status:", processorResponse.status);
+    
+    const responseText = await processorResponse.text();
+    console.log("Processor response body:", responseText.substring(0, 500));
 
-    console.log("Processor response:", processorResult);
+    // Check if response is HTML (error page)
+    if (responseText.startsWith("<") || responseText.startsWith("<!")) {
+      throw new Error(`Video processor returned HTML error (status ${processorResponse.status}). Server may be down or endpoint invalid.`);
+    }
 
-    // Check for error or failed status (processing/queued are valid)
+    let processorResult;
+    try {
+      processorResult = JSON.parse(responseText);
+    } catch {
+      throw new Error(`Invalid JSON response from video processor: ${responseText.substring(0, 100)}`);
+    }
+
+    console.log("Processor result:", processorResult);
+
     if (!processorResponse.ok || processorResult.error) {
-      throw new Error(processorResult.error || "Video processing failed");
+      throw new Error(processorResult.error || `Video processing failed with status ${processorResponse.status}`);
     }
 
     return new Response(
