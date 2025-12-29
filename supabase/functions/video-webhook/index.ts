@@ -30,15 +30,26 @@ Deno.serve(async (req) => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Edit Labs Video Processor webhook - check for success or outputUrl
-    // The processor may send: { success: true, outputUrl: "..." } without event field
+    // Edit Labs Video Processor webhook - accept multiple payload formats
+    // Common shapes:
+    // - { success: true, outputUrl: "..." }
+    // - { success: true, output_url: "..." }
+    // - { event: "job.completed", url: "..." }
     const isSuccess = body.success === true || body.event === "job.completed" || body.status === "completed";
     const isFailed = body.event === "job.failed" || body.status === "failed" || body.status === "error";
 
-    if (isSuccess && body.outputUrl) {
+    const outputUrl: string | null =
+      body.outputUrl ||
+      body.output_url ||
+      body.url ||
+      body?.result?.outputUrl ||
+      body?.result?.output_url ||
+      body?.data?.outputUrl ||
+      body?.data?.output_url ||
+      null;
+
+    if (isSuccess && outputUrl) {
       console.log("Job completed successfully");
-      
-      const outputUrl = body.outputUrl;
       console.log("Output URL:", outputUrl);
 
       const { error: updateError } = await supabase
