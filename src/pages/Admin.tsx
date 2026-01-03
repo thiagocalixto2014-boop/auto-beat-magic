@@ -6,9 +6,9 @@ import { AdminLoginGate } from "@/components/admin/AdminLoginGate";
 import { ServerStatusCards } from "@/components/admin/ServerStatusCards";
 import { JobsTable, Job } from "@/components/admin/JobsTable";
 import { PerformanceChart } from "@/components/admin/PerformanceChart";
-import { supabase } from "@/integrations/supabase/client";
 
 const POLL_INTERVAL = 5000;
+const SERVER_BASE_URL = "http://188.34.136.38";
 
 interface ServerHealth {
   status: string;
@@ -37,16 +37,13 @@ const AdminDashboard = () => {
     if (isManual) setIsLoading(true);
 
     try {
-      // Use edge function proxy to avoid CORS issues
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-proxy?endpoint=health`,
-        {
-          headers: {
-            "Authorization": `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      // Direct request to server (CORS enabled on server)
+      const response = await fetch(`${SERVER_BASE_URL}/health`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
