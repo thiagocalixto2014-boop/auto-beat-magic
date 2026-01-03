@@ -56,25 +56,101 @@ serve(async (req) => {
       ]
     }`;
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [
-          { 
-            role: "system", 
-            content: "You are a professional video editor AI. Always respond with valid JSON only." 
+    // Retry logic for transient errors (503, 429)
+    let response: Response | null = null;
+    let lastError: Error | null = null;
+    const maxRetries = 3;
+    
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      console.log(`AI Gateway attempt ${attempt}/${maxRetries}`);
+      
+      try {
+        response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${LOVABLE_API_KEY}`,
+            "Content-Type": "application/json",
           },
-          { role: "user", content: analysisPrompt },
-        ],
-      }),
-    });
+          body: JSON.stringify({
+            model: "google/gemini-2.5-flash",
+            messages: [
+              { 
+                role: "system", 
+                content: "You are a professional video editor AI. Always respond with valid JSON only." 
+              },
+              { role: "user", content: analysisPrompt },
+            ],
+          }),
+        });
 
-    if (!response.ok) throw new Error(`AI Gateway error: ${response.status}`);
+        if (response.ok) {
+          console.log("AI Gateway request successful");
+          break;
+        }
+        
+        // Handle specific error codes
+        if (response.status === 503 || response.status === 429) {
+          console.log(`AI Gateway returned ${response.status}, retrying in ${attempt * 2}s...`);
+          lastError = new Error(`AI Gateway error: ${response.status}`);
+          if (attempt < maxRetries) {
+            await new Promise(resolve => setTimeout(resolve, attempt * 2000));
+            continue;
+          }
+        } else if (response.status === 402) {
+          throw new Error("AI credits exhausted. Please add funds to continue.");
+        } else {
+          const errorText = await response.text();
+          console.error("AI Gateway error:", response.status, errorText);
+          throw new Error(`AI Gateway error: ${response.status}`);
+        }
+      } catch (fetchError) {
+        console.error(`Attempt ${attempt} failed:`, fetchError);
+        lastError = fetchError instanceof Error ? fetchError : new Error(String(fetchError));
+        if (attempt < maxRetries) {
+          await new Promise(resolve => setTimeout(resolve, attempt * 2000));
+        }
+      }
+    }
+
+    if (!response || !response.ok) {
+      console.log("AI Gateway failed after retries, using fallback beat data");
+      // Use fallback data instead of failing completely
+      const fallbackBeatData = {
+        bpm: template === "phonk" ? 140 : template === "lofi" ? 85 : 128,
+        totalDuration: targetDuration,
+        beats: Array.from({ length: 32 }, (_, i) => i * 0.47),
+        hardBeats: [0, 1.87, 3.75, 5.62, 7.5, 9.37, 11.25, 13.12],
+        segments: clipsUrls?.map((_, i) => ({
+          start: i * (targetDuration / numClips),
+          end: (i + 1) * (targetDuration / numClips),
+          clipIndex: i
+        })) || [{ start: 0, end: targetDuration, clipIndex: 0 }],
+        effectTimings: [
+          { time: 0, effect: "smooth-zoom", intensity: 10 },
+          { time: 1.87, effect: "shake", intensity: 8 },
+          { time: 3.75, effect: "flash", intensity: 7 },
+          { time: 5.62, effect: "smooth-zoom", intensity: 9 },
+          { time: 7.5, effect: "shake", intensity: 8 }
+        ]
+      };
+
+      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+      const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+      const supabase = createClient(supabaseUrl, supabaseKey);
+
+      await supabase
+        .from("projects")
+        .update({
+          beat_data: fallbackBeatData,
+          status: "processing",
+        })
+        .eq("id", projectId);
+
+      return new Response(
+        JSON.stringify({ success: true, beatData: fallbackBeatData, usedFallback: true }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     const aiResponse = await response.json();
     const content = aiResponse.choices?.[0]?.message?.content;
