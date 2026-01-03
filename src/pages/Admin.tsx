@@ -40,8 +40,9 @@ const AdminDashboard = () => {
       // Direct request to server (CORS enabled on server)
       const response = await fetch(`${SERVER_BASE_URL}/health`, {
         method: "GET",
+        mode: "cors",
         headers: {
-          "Content-Type": "application/json",
+          "Accept": "application/json",
         },
       });
 
