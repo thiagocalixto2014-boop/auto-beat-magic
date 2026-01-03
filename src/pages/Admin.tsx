@@ -6,8 +6,8 @@ import { AdminLoginGate } from "@/components/admin/AdminLoginGate";
 import { ServerStatusCards } from "@/components/admin/ServerStatusCards";
 import { JobsTable, Job } from "@/components/admin/JobsTable";
 import { PerformanceChart } from "@/components/admin/PerformanceChart";
+import { supabase } from "@/integrations/supabase/client";
 
-const SERVER_BASE_URL = "http://188.34.136.38";
 const POLL_INTERVAL = 5000;
 
 interface ServerHealth {
@@ -37,23 +37,27 @@ const AdminDashboard = () => {
     if (isManual) setIsLoading(true);
 
     try {
-      const response = await fetch(`${SERVER_BASE_URL}/health`, {
-        method: "GET",
-        headers: {
-          "Accept": "application/json",
-        },
-      });
+      // Use edge function proxy to avoid CORS issues
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-proxy?endpoint=health`,
+        {
+          headers: {
+            "Authorization": `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
       }
 
-      const data: ServerHealth = await response.json();
+      const healthData: ServerHealth = await response.json();
       
       // Check for new jobs
-      const currentJobIds = new Set(data.queue.recent_jobs.map(j => j.id));
+      const currentJobIds = new Set(healthData.queue.recent_jobs.map((j: Job) => j.id));
       const newIds = new Set<string>();
-      currentJobIds.forEach(id => {
+      currentJobIds.forEach((id: string) => {
         if (!previousJobIds.has(id)) {
           newIds.add(id);
         }
@@ -65,7 +69,7 @@ const AdminDashboard = () => {
       }
       
       setPreviousJobIds(currentJobIds);
-      setHealth(data);
+      setHealth(healthData);
       setIsError(false);
       setLastUpdate(new Date());
     } catch (error) {
