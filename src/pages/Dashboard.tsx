@@ -189,7 +189,7 @@ const Dashboard = () => {
           {/* Recent Videos */}
           <RecentVideos 
             projects={projects}
-            onViewAll={() => {}}
+            onViewAll={() => navigate("/library")}
           />
         </main>
       </div>
