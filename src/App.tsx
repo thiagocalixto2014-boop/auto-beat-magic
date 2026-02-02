@@ -9,6 +9,7 @@ import Dashboard from "./pages/Dashboard";
 import Editor from "./pages/Editor";
 import CreateMagic from "./pages/CreateMagic";
 import Library from "./pages/Library";
+import Subscription from "./pages/Subscription";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 
@@ -27,6 +28,7 @@ const App = () => (
           <Route path="/editor/new" element={<CreateMagic />} />
           <Route path="/editor/:projectId" element={<Editor />} />
           <Route path="/library" element={<Library />} />
+          <Route path="/subscription" element={<Subscription />} />
           <Route path="/admin" element={<Admin />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
