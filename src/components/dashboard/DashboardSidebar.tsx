@@ -37,6 +37,7 @@ export const DashboardSidebar = () => {
   const navItems: NavItem[] = [
     { icon: Home, label: "Início", path: "/dashboard" },
     { icon: Wand2, label: "Criar Mágico", path: "/editor/new", highlight: true },
+    { icon: Sparkles, label: "Editor IA", path: "/dashboard" },
     { icon: BookOpen, label: "Biblioteca", path: "/dashboard" },
     { icon: CreditCard, label: "Assinatura", path: "/dashboard" },
     { icon: User, label: "Perfil", path: "/dashboard" },
