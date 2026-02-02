@@ -41,7 +41,7 @@ export const DashboardSidebar = () => {
     { icon: Sparkles, label: "Editor IA", path: "/editor-ia", disabled: true },
     { icon: BookOpen, label: "Biblioteca", path: "/library" },
     { icon: CreditCard, label: "Assinatura", path: "/subscription" },
-    { icon: User, label: "Perfil", path: "/profile", disabled: true },
+    { icon: User, label: "Perfil", path: "/profile" },
   ];
 
   // Check if current path matches the nav item
