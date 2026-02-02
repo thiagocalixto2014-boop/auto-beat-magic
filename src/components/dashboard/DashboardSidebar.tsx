@@ -16,8 +16,9 @@ import { toast } from "sonner";
 interface NavItem {
   icon: React.ElementType;
   label: string;
-  path?: string;
+  path: string;
   highlight?: boolean;
+  disabled?: boolean;
 }
 
 export const DashboardSidebar = () => {
@@ -37,11 +38,22 @@ export const DashboardSidebar = () => {
   const navItems: NavItem[] = [
     { icon: Home, label: "Início", path: "/dashboard" },
     { icon: Wand2, label: "Criar Mágico", path: "/editor/new", highlight: true },
-    { icon: Sparkles, label: "Editor IA", path: "/dashboard" },
+    { icon: Sparkles, label: "Editor IA", path: "/editor-ia", disabled: true },
     { icon: BookOpen, label: "Biblioteca", path: "/library" },
-    { icon: CreditCard, label: "Assinatura", path: "/dashboard" },
-    { icon: User, label: "Perfil", path: "/dashboard" },
+    { icon: CreditCard, label: "Assinatura", path: "/subscription", disabled: true },
+    { icon: User, label: "Perfil", path: "/profile", disabled: true },
   ];
+
+  // Check if current path matches the nav item
+  const isItemActive = (itemPath: string) => {
+    // Exact match
+    if (location.pathname === itemPath) return true;
+    // For editor paths, check if we're in a project editor (not /editor/new)
+    if (itemPath === "/dashboard" && location.pathname.startsWith("/editor/") && location.pathname !== "/editor/new") {
+      return false;
+    }
+    return false;
+  };
 
   return (
     <aside className="fixed left-0 top-0 h-full w-72 bg-gradient-to-b from-card to-background border-r border-border/30 flex flex-col z-40">
@@ -61,18 +73,21 @@ export const DashboardSidebar = () => {
       {/* Navigation */}
       <nav className="flex-1 px-4 py-6 space-y-2">
         {navItems.map((item) => {
-          const isActive = location.pathname === item.path && !item.highlight;
+          const isActive = isItemActive(item.path) && !item.highlight;
           return (
             <button
               key={item.label}
-              onClick={() => item.path && navigate(item.path)}
+              onClick={() => !item.disabled && navigate(item.path)}
+              disabled={item.disabled}
               className={cn(
                 "w-full flex items-center gap-4 px-4 py-3.5 rounded-xl text-sm font-medium transition-all duration-300",
                 item.highlight 
                   ? "bg-gradient-purple text-white shadow-purple hover:shadow-glow hover:scale-[1.02]"
                   : isActive 
                     ? "bg-purple-main/15 text-purple-light" 
-                    : "text-muted-foreground hover:text-foreground hover:bg-secondary/80"
+                    : item.disabled
+                      ? "text-muted-foreground/50 cursor-not-allowed"
+                      : "text-muted-foreground hover:text-foreground hover:bg-secondary/80"
               )}
             >
               <item.icon className={cn(
