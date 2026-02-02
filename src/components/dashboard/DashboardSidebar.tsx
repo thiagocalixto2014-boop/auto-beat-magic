@@ -6,7 +6,7 @@ import {
   CreditCard, 
   User, 
   LogOut,
-  Settings
+  Wand2
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -17,7 +17,7 @@ interface NavItem {
   icon: React.ElementType;
   label: string;
   path?: string;
-  action?: () => void;
+  highlight?: boolean;
 }
 
 export const DashboardSidebar = () => {
@@ -36,53 +36,70 @@ export const DashboardSidebar = () => {
 
   const navItems: NavItem[] = [
     { icon: Home, label: "Início", path: "/dashboard" },
-    { icon: Sparkles, label: "Criar Mágico", path: "/editor/new" },
+    { icon: Wand2, label: "Criar Mágico", path: "/editor/new", highlight: true },
     { icon: BookOpen, label: "Biblioteca", path: "/dashboard" },
     { icon: CreditCard, label: "Assinatura", path: "/dashboard" },
     { icon: User, label: "Perfil", path: "/dashboard" },
   ];
 
   return (
-    <aside className="fixed left-0 top-0 h-full w-64 bg-card border-r border-border/50 flex flex-col z-40">
+    <aside className="fixed left-0 top-0 h-full w-72 bg-gradient-to-b from-card to-background border-r border-border/30 flex flex-col z-40">
       {/* Logo */}
-      <div className="p-6">
-        <div className="text-xl font-bold tracking-tight">
-          <span className="bg-gradient-purple bg-clip-text text-transparent">EDIT</span>
-          <span className="text-foreground">LABS</span>
+      <div className="p-8">
+        <div className="text-2xl font-bold tracking-tight flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-gradient-purple flex items-center justify-center shadow-purple">
+            <Sparkles className="w-5 h-5 text-white" />
+          </div>
+          <div>
+            <span className="bg-gradient-purple bg-clip-text text-transparent">EDIT</span>
+            <span className="text-foreground">LABS</span>
+          </div>
         </div>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 px-3 py-4 space-y-1">
+      <nav className="flex-1 px-4 py-6 space-y-2">
         {navItems.map((item) => {
-          const isActive = location.pathname === item.path;
+          const isActive = location.pathname === item.path && !item.highlight;
           return (
             <button
               key={item.label}
               onClick={() => item.path && navigate(item.path)}
               className={cn(
-                "w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all",
-                isActive 
-                  ? "bg-purple-main/10 text-purple-light border-l-2 border-purple-main" 
-                  : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+                "w-full flex items-center gap-4 px-4 py-3.5 rounded-xl text-sm font-medium transition-all duration-300",
+                item.highlight 
+                  ? "bg-gradient-purple text-white shadow-purple hover:shadow-glow hover:scale-[1.02]"
+                  : isActive 
+                    ? "bg-purple-main/15 text-purple-light" 
+                    : "text-muted-foreground hover:text-foreground hover:bg-secondary/80"
               )}
             >
-              <item.icon className={cn("w-5 h-5", isActive && "text-purple-light")} />
+              <item.icon className={cn(
+                "w-5 h-5 transition-transform duration-300",
+                item.highlight ? "text-white" : isActive ? "text-purple-light" : ""
+              )} />
               {item.label}
+              {item.highlight && (
+                <span className="ml-auto text-[10px] font-bold bg-white/20 px-2 py-0.5 rounded-full">
+                  IA
+                </span>
+              )}
             </button>
           );
         })}
       </nav>
 
-      {/* Sign Out */}
-      <div className="p-4 border-t border-border/50">
+      {/* User section */}
+      <div className="p-4 mx-4 mb-4 rounded-2xl bg-secondary/30 border border-border/30">
         <Button
           variant="ghost"
           onClick={handleSignOut}
-          className="w-full justify-start gap-3 text-muted-foreground hover:text-foreground"
+          className="w-full justify-start gap-3 text-muted-foreground hover:text-foreground hover:bg-transparent group"
         >
-          <LogOut className="w-5 h-5" />
-          Sair
+          <div className="w-9 h-9 rounded-lg bg-secondary flex items-center justify-center group-hover:bg-destructive/10 transition-colors">
+            <LogOut className="w-4 h-4 group-hover:text-destructive transition-colors" />
+          </div>
+          <span className="group-hover:text-destructive transition-colors">Sair</span>
         </Button>
       </div>
     </aside>
