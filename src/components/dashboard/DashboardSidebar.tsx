@@ -38,7 +38,7 @@ export const DashboardSidebar = () => {
     { icon: Home, label: "Início", path: "/dashboard" },
     { icon: Wand2, label: "Criar Mágico", path: "/editor/new", highlight: true },
     { icon: Sparkles, label: "Editor IA", path: "/dashboard" },
-    { icon: BookOpen, label: "Biblioteca", path: "/dashboard" },
+    { icon: BookOpen, label: "Biblioteca", path: "/library" },
     { icon: CreditCard, label: "Assinatura", path: "/dashboard" },
     { icon: User, label: "Perfil", path: "/dashboard" },
   ];
