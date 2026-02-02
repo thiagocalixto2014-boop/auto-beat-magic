@@ -3,7 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Upload, Music, Video, X, Loader2, ArrowRight, Clock } from "lucide-react";
+import { Upload, Music, Video, X, ArrowRight, Clock } from "lucide-react";
+import { VideoProcessingLoader } from "./video-processing-loader";
 
 interface Project {
   id: string;
@@ -179,8 +180,11 @@ export const UploadStep = ({ project, userId, onUpdate, onNext }: UploadStepProp
               onClick={() => musicInputRef.current?.click()}
               className="border-2 border-dashed border-purple-main/30 rounded-xl p-8 text-center cursor-pointer hover:border-purple-main/60 transition-colors"
             >
-              {uploadingMusic ? (
-                <Loader2 className="w-8 h-8 animate-spin mx-auto text-purple-light" />
+            {uploadingMusic ? (
+              <VideoProcessingLoader 
+                fileName={musicFile?.name} 
+                isProcessing={uploadingMusic} 
+              />
               ) : (
                 <>
                   <Upload className="w-8 h-8 text-purple-light/50 mx-auto mb-3" />
@@ -238,8 +242,11 @@ export const UploadStep = ({ project, userId, onUpdate, onNext }: UploadStepProp
               onClick={() => clipsInputRef.current?.click()}
               className="border-2 border-dashed border-magenta/30 rounded-xl p-8 text-center cursor-pointer hover:border-magenta/60 transition-colors"
             >
-              {uploadingClips ? (
-                <Loader2 className="w-8 h-8 animate-spin mx-auto text-magenta" />
+            {uploadingClips ? (
+              <VideoProcessingLoader 
+                fileName={clipFiles[0]?.name} 
+                isProcessing={uploadingClips} 
+              />
               ) : (
                 <>
                   <Upload className="w-8 h-8 text-magenta/50 mx-auto mb-3" />
